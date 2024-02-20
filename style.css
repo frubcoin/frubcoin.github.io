@@ -65,10 +65,15 @@ canvas {
 .centered-elements:hover {
     background-color: rgba(240, 240, 240, 1);
     transform: scale(1.005);
-  
+}
+    .profile-pic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
 
-@media (min-width:320px) {
-  .centered-elements {
-    width: 100%; /* width of the box for smaller screens */
-  }
+.header-container {
+  display: flex;
+  align-items: center;
 }
