@@ -6,8 +6,8 @@ class Pointer {
     scaleMin = 0.01,
     scaleMax = 10.0,
     pressureMax = 1.0,
-    pressureDuration = 1000
-  } = {}) {
+    pressureDuration = 1000 } =
+  {}) {
     if (Pointer.instance) {
       return Pointer.instance;
     }
@@ -16,8 +16,8 @@ class Pointer {
       scaleMin,
       scaleMax,
       pressureMax,
-      pressureDuration
-    };
+      pressureDuration };
+
     this.pressCheckInterval = 20;
     this.deltaPressure = this.opt.pressureMax / this.opt.pressureDuration * this.pressCheckInterval;
     this.position = new Vector2();
@@ -87,8 +87,8 @@ class Pointer {
     let pressingTest = setInterval(() => {
       if (this.isPressing) {
         var event = new CustomEvent('Pointer.pressing', {
-          detail: this.pressure
-        });
+          detail: this.pressure });
+
         this.dom.dispatchEvent(event);
       } else {
         clearInterval(pressingTest);
@@ -116,14 +116,14 @@ class Pointer {
     let intervalID = setInterval(() => {
       if (this.isPressing || !this.setPressure(this.pressure - this.deltaPressure)) {
         var event = new CustomEvent('Pointer.pressingEnd', {
-          detail: this.pressure
-        });
+          detail: this.pressure });
+
         this.dom.dispatchEvent(event);
         clearInterval(intervalID);
       } else {
         var event = new CustomEvent('Pointer.postpressing', {
-          detail: this.pressure
-        });
+          detail: this.pressure });
+
         this.dom.dispatchEvent(event);
       }
     }, this.pressCheckInterval);
@@ -181,21 +181,21 @@ class Pointer {
   }
   zoomOut(scaleFactor = this.zoomScale) {
     this.setScale(this.scale / scaleFactor);
-  }
-}
+  }}
+
 Pointer.instance = null;
 Pointer.BUTTON = {
   MOUSE_LEFT: 0,
   MOUSE_MIDDLE: 1,
-  MOUSE_RIGHT: 2
-};
+  MOUSE_RIGHT: 2 };
+
 const regl = createREGL();
 const DEV = false;
 const seed = DEV ? 38975.579831 : new Date().getTime() % 100000;
 const pointer = new Pointer(regl._gl.canvas);
 let lastPressingT,
-  dtSec = 0,
-  morphAmount = 0;
+dtSec = 0,
+morphAmount = 0;
 pointer.addPressingListener(e => {
   lastPressingT = lastPressingT || Date.now();
   const nowInMs = Date.now();
@@ -203,6 +203,8 @@ pointer.addPressingListener(e => {
   lastPressingT = nowInMs;
   morphAmount += dtSec * pointer.pressure * 0.1;
 });
+
+
 const draw = regl({
   frag: `
     precision mediump float;
@@ -273,31 +275,39 @@ const draw = regl({
       gl_Position = vec4(position, 0, 1);
     }
   `,
+
   attributes: {
-    position: regl.buffer([[-1, -1], [1, -1], [-1, 1], [-1, 1], [1, 1], [1, -1]])
-  },
+    position: regl.buffer([[-1, -1], [1, -1], [-1, 1],
+    [-1, 1], [1, 1], [1, -1]]) },
+
+
+
+
   uniforms: {
     uResolution: ({
       viewportWidth,
-      viewportHeight
-    }) => [viewportWidth, viewportHeight],
+      viewportHeight }) =>
+    [viewportWidth, viewportHeight],
     uTime: ({
-      tick
-    }) => 0.01 * tick,
+      tick }) =>
+    0.01 * tick,
     uMouse: () => [pointer.position.x, pointer.position.y],
     uMorph: () => morphAmount,
     uRandomSeed: DEV ? 138975.579831 : new Date().getTime() % 1000000,
     //
     uGrid: ({
       viewportWidth,
-      viewportHeight
-    }) => {
+      viewportHeight }) =>
+    {
       const ratio = 0.32;
       return viewportHeight >= viewportWidth ? [1, viewportHeight / viewportWidth * ratio] : [viewportWidth / viewportHeight * ratio, 1];
-    }
-  },
-  count: 6
-});
+    } },
+
+
+  count: 6 });
+
+
+
 regl.frame(() => {
   draw();
 });
