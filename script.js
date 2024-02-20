@@ -31,8 +31,6 @@ var canvas,
     gui;
 
 
-// Initialize
-
 function init() {
     canvas = document.getElementById('c');
 
