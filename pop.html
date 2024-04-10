@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POP</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.play.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      border: 2px solid black;
+    }
+  </style>
+</head>
+<body>
+  
+<script>
+  // Declare variables for the artwork
+  let circles = [];
+  let trailParticles = [];
+  const colors = [
+    [255, 0, 0],    // Red
+    [0, 255, 0],    // Green
+    [0, 0, 255],    // Blue
+    [255, 255, 0],  // Yellow
+    [255, 165, 0],  // Orange
+    [128, 0, 128],  // Purple
+    [255, 192, 203],// Pink
+    [0, 128, 0],    // Green
+  ];
+
+  function setup() {
+    createCanvas(windowWidth * 0.8, windowHeight * 0.8); // Set canvas size relative to window size
+    // Create circles with random positions and colors
+    for (let i = 0; i < 20; i++) {
+    let colorIndex = Math.floor(random(colors.length));
+    let circle = new Circle(random(width), random(height), random(20, 50), color(colors[colorIndex][0], colors[colorIndex][1], colors[colorIndex][2]));
+    circles.push(circle);
+  }
+}
+
+  function draw() {
+    background(220);
+    
+    // Update and display trail particles
+    for (let i = trailParticles.length - 1; i >= 0; i--) {
+      trailParticles[i].update();
+      trailParticles[i].display();
+      if (trailParticles[i].alpha <= 0) {
+        trailParticles.splice(i, 1);
+      }
+    }
+    
+    // Display and update each circle
+    for (let circle of circles) {
+      circle.display();
+      circle.update();
+      circle.checkEdges();
+      circle.createTrail();
+      for (let other of circles) {
+        if (circle !== other) {
+          circle.collide(other);
+        }
+      }
+    }
+  }
+
+  function mouseClicked() {
+    // Add a new circle at the mouse position when clicked
+    let colorIndex = Math.floor(random(colors.length));
+    let newCircle = new Circle(mouseX, mouseY, random(20, 50), color(colors[colorIndex][0], colors[colorIndex][1], colors[colorIndex][2]));
+    circles.push(newCircle);
+  }
+
+  class Circle {
+    constructor(x, y, diameter, color) {
+      this.x = x;
+      this.y = y;
+      this.diameter = diameter;
+      this.color = color;
+      this.speedX = random(-2, 2);
+      this.speedY = random(-2, 2);
+      this.growthCount = 0; // Initialize growth count
+    }
+
+    display() {
+      fill(this.color);
+      ellipse(this.x, this.y, this.diameter);
+    }
+
+    update() {
+      // Move the circle relative to canvas size
+      this.x += (this.speedX / 600) * width; 
+      this.y += (this.speedY / 400) * height; 
+
+      // Check if the circle diameter exceeds a certain size, if so, remove it
+      if (this.diameter >= 100) {
+        this.popIntoParticles();
+        circles.splice(circles.indexOf(this), 1);
+      }
+    }
+
+    checkEdges() {
+      // Prevent circles from getting stuck on the edges
+      if (this.x <= this.diameter / 2) {
+        this.x = this.diameter / 2;
+        this.speedX *= -1;
+      } else if (this.x >= width - this.diameter / 2) {
+        this.x = width - this.diameter / 2;
+        this.speedX *= -1;
+      }
+      
+      if (this.y <= this.diameter / 2) {
+        this.y = this.diameter / 2;
+        this.speedY *= -1;
+      } else if (this.y >= height - this.diameter / 2) {
+        this.y = height - this.diameter / 2;
+        this.speedY *= -1;
+      }
+    }
+
+    collide(other) {
+      // Check if this circle collides with another circle
+      let dx = other.x - this.x;
+      let dy = other.y - this.y;
+      let distance = dist(this.x, this.y, other.x, other.y);
+      let minDistance = (this.diameter + other.diameter) / 2;
+
+      if (distance < minDistance) {
+        // If circles are of the same color, combine their mass
+        if (this.color.toString() === other.color.toString()) {
+          // Increment growth count for the larger circle
+          if (this.diameter >= other.diameter) {
+            this.growthCount++;
+            if (this.growthCount >= 4) {
+              this.popIntoParticles();
+              // Remove this circle
+              circles.splice(circles.indexOf(this), 1);
+            } else {
+              // Combine circles, ensuring the combination point is always the larger circle
+              this.combine(other);
+            }
+          } else {
+            other.growthCount++;
+            if (other.growthCount >= 4) {
+              other.popIntoParticles();
+              // Remove other circle
+              circles.splice(circles.indexOf(other), 1);
+            } else {
+              // Combine circles, ensuring the combination point is always the larger circle
+              other.combine(this);
+            }
+          }
+        } else {
+          // Calculate collision angle
+          let angle = atan2(dy, dx);
+          let targetX = this.x + cos(angle) * minDistance;
+          let targetY = this.y + sin(angle) * minDistance;
+          let ax = (targetX - other.x) * 0.1;
+          let ay = (targetY - other.y) * 0.1;
+
+          // Apply forces to simulate bouncing off
+          this.speedX -= ax;
+          this.speedY -= ay;
+          other.speedX += ax;
+          other.speedY += ay;
+        }
+      }
+    }
+
+    createTrail() {
+      // Create trail particles behind the circle
+      let trailParticle = new TrailParticle(this.x, this.y, this.color, this.diameter);
+      trailParticles.push(trailParticle);
+    }
+
+    popIntoParticles() {
+      // Create particles from the circle's position
+      for (let i = 0; i < 100; i++) {
+        let angle = random(TWO_PI);
+        let particleSpeed = random(1, 5);
+        let particle = new TrailParticle(this.x, this.y, this.color, this.diameter);
+        particle.velocityX = cos(angle) * particleSpeed;
+        particle.velocityY = sin(angle) * particleSpeed;
+        trailParticles.push(particle);
+      }
+
+      // Create smaller circles from the bubble's position
+      for (let i = 0; i < 3; i++) {
+        let newX = this.x + random(-this.diameter / 20, this.diameter / 20);
+        let newY = this.y + random(-this.diameter / 20, this.diameter / 20);
+        let colorIndex = Math.floor(random(colors.length));
+        let newCircle = new Circle(newX, newY, 20, color(colors[colorIndex][0], colors[colorIndex][1], colors[colorIndex][2]));
+        circles.push(newCircle);
+      }
+    }
+
+    combine(other) {
+      // Calculate weighted average position based on circle sizes
+      let totalDiameter = this.diameter + other.diameter;
+      let combinedX = (this.x * this.diameter + other.x * other.diameter) / totalDiameter;
+      let combinedY = (this.y * this.diameter + other.y * other.diameter) / totalDiameter;
+
+      // Add masses together
+      let combinedDiameter = totalDiameter;
+
+      // Update circle with combined mass and new position
+      this.diameter = combinedDiameter;
+      this.x = combinedX;
+      this.y = combinedY;
+
+      // Remove the other circle
+      circles.splice(circles.indexOf(other), 1);
+    }
+  }
+
+  class TrailParticle {
+    constructor(x, y, color, diameter) {
+      this.x = x;
+      this.y = y;
+      this.color = color;
+      this.size = diameter * random(0.05, 0.1); // Adjust size based on circle diameter
+      this.alpha = 255;
+      this.velocityX = random(-1, 1);
+      this.velocityY = random(-1, 1);
+    }
+
+    update() {
+      this.x += this.velocityX;
+      this.y += this.velocityY;
+      this.alpha -= 5;
+    }
+
+    display() {
+      noStroke();
+      fill(this.color.levels[0], this.color.levels[1], this.color.levels[2], this.alpha);
+      ellipse(this.x, this.y, this.size);
+    }
+  }
+
+  // Resize canvas when window is resized
+  function windowResized() {
+    resizeCanvas(windowWidth * 0.8, windowHeight * 0.8);
+  }
+</script>
+
+</body>
+</html>
