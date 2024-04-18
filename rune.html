@@ -251,6 +251,24 @@ html {
     function goToLink() {
       window.location.href = "https://magiceden.io/ordinals/marketplace/runechaos"; // Replace "https://www.example.com" with your desired link
     }
+
+    // Get the audio element
+let audio = document.getElementById("mouseAudio");
+
+// Variable to track whether the audio has been played already
+let audioPlayed = false;
+
+// Event listener for mouse movement
+document.addEventListener("mousemove", function(event) {
+  // Check if the audio has not been played yet
+  if (!audioPlayed) {
+    // Play the audio
+    audio.play();
+    // Set the flag to true to indicate that the audio has been played
+    audioPlayed = true;
+  }
+});
+
   </script>
 </body>
 </html>
