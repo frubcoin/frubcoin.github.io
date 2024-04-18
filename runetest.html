@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RUNE CHAOS</title>
+  <title>[TEST] RUNE CHAOS</title>
   <link rel="stylesheet" href="./rune.css">
   <link rel="shortcut icon" href="rune.ico" type="image/x-icon"/>
   <style>
@@ -123,15 +123,12 @@
       color: #fff;
     }
 
-    /* Style the container for the 3D model */
-    #model-container {
+    /* Style the container for the Model Viewer */
+    #model-viewer-container {
       position: absolute;
       top: calc(50% + 50px); /* Position below the box with 50px padding */
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 300px; /* Adjust width and height according to your model */
-      height: 300px;
-      border: 1px solid black; /* Example border */
     }
   </style>
 </head>
@@ -149,48 +146,14 @@
   <span id="moon-icon">🌜</span>
 </div>
 
-<!-- Container for the 3D model -->
-<div id="model-container"></div>
+<!-- Container for the Model Viewer -->
+<div id="model-viewer-container">
+  <model-viewer src="path_to_your_model.glb" alt="Your 3D Model" style="width: 300px; height: 300px;"></model-viewer>
+</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://modelviewer.dev/shared/model-viewer/model-viewer.min.js"></script>
+
 <script>
-  let scene, camera, renderer;
-
-  init();
-  animate();
-
-  function init() {
-    // Set up the scene
-    scene = new THREE.Scene();
-
-    // Set up the camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
-
-    // Set up the renderer
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(300, 300); // Set size to match the container
-    document.getElementById('model-container').appendChild(renderer.domElement);
-
-    // Load the 3D model
-    const loader = new THREE.GLTFLoader();
-    loader.load(
-      'untitl23ed.glb', // Replace with the path to your 3D model file
-      function (gltf) {
-        scene.add(gltf.scene);
-      },
-      undefined,
-      function (error) {
-        console.error(error);
-      }
-    );
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  }
-
   // JavaScript function to toggle invert colors class and switch moon icon to sun icon
   function toggleInvertColors() {
     let moonIcon = document.getElementById('moon-icon');
