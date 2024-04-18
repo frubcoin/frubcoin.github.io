@@ -2,513 +2,260 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
-  <title>follow frub</title>
-  <link rel="stylesheet" href="./style.css">
+  <title>RUNE CHAOS</title>
+  <link rel="stylesheet" href="./rune.css">
 
 </head>
 <body>
+<!-- partial:index.partial.html -->
 <!DOCTYPE html>
-<html lang="en" >
+<html>
 <head>
+<audio autoplay loop volume="0.1">
+  <source src="https://cdn.discordapp.com/attachments/887521357548638249/1230559553024954418/2024-04-18_09-39-59_mp3cut.net.mp3?ex=6633c2e4&is=66214de4&hm=1a0919e0901bbeec5d1b24368f7f987c405bcd84466fef1488e6b0cbc728d810&" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
   <meta charset="UTF-8">
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
-  <title>follow frub</title>
-  <link rel="stylesheet" href="./style.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <canvas id='c'></canvas>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-</head>
-  
-<body>
-  <div class="centered-elements">
-   <div class="header-container">
-  <img src="frub.jpg" alt="Profile Picture" class="profile-pic">
-  <h1>frub</h1>
-</div>
-    <article>
-      web3? more like webme.
-    </article>
-    <a href="https://www.twitter.com/frubcoin" target="_blank">Twitter</a>
-    <a href="https://warpcast.com/frub" target="_blank">Warpcast</a>
-
-    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/5K9tfeoiztw94dyWzF39jq?utm_source=generator&theme=0" width="100%" height="100" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-  </div>
-  <script>
-function Vector2( x, y ) {
-
-	this.x = x || 0;
-	this.y = y || 0;
-
+  <title>Generative Runic Art</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.play.min.js"></script> <!-- Added p5.play library -->
+  <style>
+html {
+      user-select: none; /* Disable text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none; /* For Internet Explorer/Edge */
+    cursor: hidden;
 }
 
-Object.defineProperties( Vector2.prototype, {
-
-	"width" : {
-
-		get: function () {
-
-			return this.x;
-
-		},
-
-		set: function ( value ) {
-
-			this.x = value;
-
-		}
-
-	},
-
-	"height" : {
-
-		get: function () {
-
-			return this.y;
-
-		},
-
-		set: function ( value ) {
-
-			this.y = value;
-
-		}
-
-	}
-
-} );
-
-Object.assign( Vector2.prototype, {
-
-	isVector2: true,
-
-	set: function ( x, y ) {
-
-		this.x = x;
-		this.y = y;
-
-		return this;
-
-	},
-
-	setScalar: function ( scalar ) {
-
-		this.x = scalar;
-		this.y = scalar;
-
-		return this;
-
-	},
-
-	setX: function ( x ) {
-
-		this.x = x;
-
-		return this;
-
-	},
-
-	setY: function ( y ) {
-
-		this.y = y;
-
-		return this;
-
-	},
-
-	setComponent: function ( index, value ) {
-
-		switch ( index ) {
-
-			case 0: this.x = value; break;
-			case 1: this.y = value; break;
-			default: throw new Error( 'index is out of range: ' + index );
-
-		}
-
-		return this;
-
-	},
-
-	getComponent: function ( index ) {
-
-		switch ( index ) {
-
-			case 0: return this.x;
-			case 1: return this.y;
-			default: throw new Error( 'index is out of range: ' + index );
-
-		}
-
-	},
-
-	clone: function () {
-
-		return new this.constructor( this.x, this.y );
-
-	},
-
-	copy: function ( v ) {
-
-		this.x = v.x;
-		this.y = v.y;
-
-		return this;
-
-	},
-
-	add: function ( v, w ) {
-
-		if ( w !== undefined ) {
-
-			console.warn( 'THREE.Vector2: .add() now only accepts one argument. Use .addVectors( a, b ) instead.' );
-			return this.addVectors( v, w );
-
-		}
-
-		this.x += v.x;
-		this.y += v.y;
-
-		return this;
-
-	},
-
-	addScalar: function ( s ) {
-
-		this.x += s;
-		this.y += s;
-
-		return this;
-
-	},
-
-	addVectors: function ( a, b ) {
-
-		this.x = a.x + b.x;
-		this.y = a.y + b.y;
-
-		return this;
-
-	},
-
-	addScaledVector: function ( v, s ) {
-
-		this.x += v.x * s;
-		this.y += v.y * s;
-
-		return this;
-
-	},
-
-	sub: function ( v, w ) {
-
-		if ( w !== undefined ) {
-
-			console.warn( 'THREE.Vector2: .sub() now only accepts one argument. Use .subVectors( a, b ) instead.' );
-			return this.subVectors( v, w );
-
-		}
-
-		this.x -= v.x;
-		this.y -= v.y;
-
-		return this;
-
-	},
-
-	subScalar: function ( s ) {
-
-		this.x -= s;
-		this.y -= s;
-
-		return this;
-
-	},
-
-	subVectors: function ( a, b ) {
-
-		this.x = a.x - b.x;
-		this.y = a.y - b.y;
-
-		return this;
-
-	},
-
-	multiply: function ( v ) {
-
-		this.x *= v.x;
-		this.y *= v.y;
-
-		return this;
-
-	},
-
-	multiplyScalar: function ( scalar ) {
-
-		this.x *= scalar;
-		this.y *= scalar;
-
-		return this;
-
-	},
-
-	divide: function ( v ) {
-
-		this.x /= v.x;
-		this.y /= v.y;
-
-		return this;
-
-	},
-
-	divideScalar: function ( scalar ) {
-
-		return this.multiplyScalar( 1 / scalar );
-
-	},
-
-	min: function ( v ) {
-
-		this.x = Math.min( this.x, v.x );
-		this.y = Math.min( this.y, v.y );
-
-		return this;
-
-	},
-
-	max: function ( v ) {
-
-		this.x = Math.max( this.x, v.x );
-		this.y = Math.max( this.y, v.y );
-
-		return this;
-
-	},
-
-	clamp: function ( min, max ) {
-
-		// assumes min < max, componentwise
-
-		this.x = Math.max( min.x, Math.min( max.x, this.x ) );
-		this.y = Math.max( min.y, Math.min( max.y, this.y ) );
-
-		return this;
-
-	},
-
-	clampScalar: function () {
-
-		var min = new Vector2();
-		var max = new Vector2();
-
-		return function clampScalar( minVal, maxVal ) {
-
-			min.set( minVal, minVal );
-			max.set( maxVal, maxVal );
-
-			return this.clamp( min, max );
-
-		};
-
-	}(),
-
-	clampLength: function ( min, max ) {
-
-		var length = this.length();
-
-		return this.divideScalar( length || 1 ).multiplyScalar( Math.max( min, Math.min( max, length ) ) );
-
-	},
-
-	floor: function () {
-
-		this.x = Math.floor( this.x );
-		this.y = Math.floor( this.y );
-
-		return this;
-
-	},
-
-	ceil: function () {
-
-		this.x = Math.ceil( this.x );
-		this.y = Math.ceil( this.y );
-
-		return this;
-
-	},
-
-	round: function () {
-
-		this.x = Math.round( this.x );
-		this.y = Math.round( this.y );
-
-		return this;
-
-	},
-
-	roundToZero: function () {
-
-		this.x = ( this.x < 0 ) ? Math.ceil( this.x ) : Math.floor( this.x );
-		this.y = ( this.y < 0 ) ? Math.ceil( this.y ) : Math.floor( this.y );
-
-		return this;
-
-	},
-
-	negate: function () {
-
-		this.x = - this.x;
-		this.y = - this.y;
-
-		return this;
-
-	},
-
-	dot: function ( v ) {
-
-		return this.x * v.x + this.y * v.y;
-
-	},
-
-	lengthSq: function () {
-
-		return this.x * this.x + this.y * this.y;
-
-	},
-
-	length: function () {
-
-		return Math.sqrt( this.x * this.x + this.y * this.y );
-
-	},
-
-	lengthManhattan: function() {
-
-		return Math.abs( this.x ) + Math.abs( this.y );
-
-	},
-
-	normalize: function () {
-
-		return this.divideScalar( this.length() || 1 );
-
-	},
-
-	angle: function () {
-
-		// computes the angle in radians with respect to the positive x-axis
-
-		var angle = Math.atan2( this.y, this.x );
-
-		if ( angle < 0 ) angle += 2 * Math.PI;
-
-		return angle;
-
-	},
-
-	distanceTo: function ( v ) {
-
-		return Math.sqrt( this.distanceToSquared( v ) );
-
-	},
-
-	distanceToSquared: function ( v ) {
-
-		var dx = this.x - v.x, dy = this.y - v.y;
-		return dx * dx + dy * dy;
-
-	},
-
-	distanceToManhattan: function ( v ) {
-
-		return Math.abs( this.x - v.x ) + Math.abs( this.y - v.y );
-
-	},
-
-	setLength: function ( length ) {
-
-		return this.normalize().multiplyScalar( length );
-
-	},
-
-	lerp: function ( v, alpha ) {
-
-		this.x += ( v.x - this.x ) * alpha;
-		this.y += ( v.y - this.y ) * alpha;
-
-		return this;
-
-	},
-
-	lerpVectors: function ( v1, v2, alpha ) {
-
-		return this.subVectors( v2, v1 ).multiplyScalar( alpha ).add( v1 );
-
-	},
-
-	equals: function ( v ) {
-
-		return ( ( v.x === this.x ) && ( v.y === this.y ) );
-
-	},
-
-	fromArray: function ( array, offset ) {
-
-		if ( offset === undefined ) offset = 0;
-
-		this.x = array[ offset ];
-		this.y = array[ offset + 1 ];
-
-		return this;
-
-	},
-
-	toArray: function ( array, offset ) {
-
-		if ( array === undefined ) array = [];
-		if ( offset === undefined ) offset = 0;
-
-		array[ offset ] = this.x;
-		array[ offset + 1 ] = this.y;
-
-		return array;
-
-	},
-
-	fromBufferAttribute: function ( attribute, index, offset ) {
-
-		if ( offset !== undefined ) {
-
-			console.warn( 'THREE.Vector2: offset has been removed from .fromBufferAttribute().' );
-
-		}
-
-		this.x = attribute.getX( index );
-		this.y = attribute.getY( index );
-
-		return this;
-
-	},
-
-	rotateAround: function ( center, angle ) {
-
-		var c = Math.cos( angle ), s = Math.sin( angle );
-
-		var x = this.x - center.x;
-		var y = this.y - center.y;
-
-		this.x = x * c - y * s + center.x;
-		this.y = x * s + y * c + center.y;
-
-		return this;
-
-	}
-
-} );
-</script>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      cursor: hidden;
+    }
+    #box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 550px;
+      height: 550px;
+      border: 10px solid black;
+      background-color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer; /* Add cursor pointer */
+      transition: transform 0.2s; /* Add transition for smooth scaling */
+    }
+    
+        /* Hover effect for the box */
+    #box:hover {
+      transform: translate(-50%, -50%) scale(1.008); /* Scale up by 5% on hover */
+    }
+
+    .runic-art {
+      width: 400px;
+      height: 400px;
+      background-color: #f1f1f1;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      animation: rotate 10s linear infinite;
+    }
+
+    .runic-symbol {
+      font-size: 40px;
+      color: #333;
+      position: absolute;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .runic-symbol:nth-child(1) {
+      top: 50px;
+      left: 50px;
+    }
+
+    .runic-symbol:nth-child(2) {
+      top: 50px;
+      right: 50px;
+    }
+
+    .runic-symbol:nth-child(3) {
+      bottom: 50px;
+      left: 50px;
+    }
+
+    .runic-symbol:nth-child(4) {
+      bottom: 50px;
+      right: 50px;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* CSS class to invert colors, excluding moon button */
+    .invert-colors:not(#moon-button) {
+      filter: invert(100%);
+    }
+
+    /* Moon button styling */
+    #moon-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      background-color: #333;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #moon-icon {
+      font-size: 24px;
+      color: #fff;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="box" onclick="goToLink()">
+    <div class="runic-symbol">ᚠ</div>
+    <div class="runic-symbol">ᚢ</div>
+    <div class="runic-symbol">ᚦ</div>
+    <div class="runic-symbol">ᚨ</div>
+  <p></p>
+  
+</div>
+
+<!-- Moon button -->
+<div id="moon-button" onclick="toggleInvertColors()">
+  <span id="moon-icon">🌜</span>
+</div>
+
+  <script>
+    // Set up the canvas
+    let canvas;
+    let cols, rows;
+    let cellSize = 20;
+
+    // Color palettes
+    let palettes = [
+      ['#ffcdd2', '#e53935', '#c62828', '#b71c1c'],
+      ['#bbdefb', '#2196f3', '#1565c0', '#0d47a1'],
+      ['#c8e6c9', '#4caf50', '#2e7d32', '#1b5e20'],
+      ['#ffe0b2', '#ff9800', '#f57c00', '#e65100']
+    ];
+
+    // Runic alphabet
+    let runicChars = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛂ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛜ', 'ᛝ', 'ᛟ', 'ᛞ', 'ᚪ', 'ᚫ', 'ᚣ', 'ᛡ', 'ᛠ'];
+
+    // Time-related variables
+    let lastTime = 0;
+    let updateInterval = 0.01; // Update every 0.1 seconds
+
+    // Initialize the art
+    function setup() {
+      canvas = createCanvas(windowWidth, windowHeight);
+      cols = floor(windowWidth / cellSize);
+      rows = floor(windowHeight / cellSize);
+    }
+
+    // Draw the art
+    function draw() {
+      let currentTime = millis() / 1000; // Get the current time in seconds
+      let deltaTime = currentTime - lastTime; // Calculate the time since the last update
+
+      if (deltaTime >= updateInterval) {
+        background(255);
+
+        // Choose a random color palette
+        let palette = random(palettes);
+
+        // Draw the lines of characters
+        for (let x = 0; x < cols; x++) {
+          for (let y = 0; y < rows; y++) {
+            let xPos = x * cellSize;
+            let yPos = y * cellSize;
+            let char = random(runicChars);
+
+            // Set the fill color based on the mouse position
+            if (mouseX > xPos && mouseX < xPos + cellSize && mouseY > yPos && mouseY < yPos + cellSize) {
+              fill(palette[1]);
+            } else {
+              fill(palette[0]);
+            }
+
+            // Draw the character
+            textSize(cellSize * 0.8);
+            textAlign(CENTER, CENTER);
+            text(char, xPos + cellSize / 2, yPos + cellSize / 2);
+          }
+        }
+
+        lastTime = currentTime; // Update the last update time
+      }
+    }
+
+    // Resize the canvas when the window is resized
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+      cols = floor(windowWidth / cellSize);
+      rows = floor(windowHeight / cellSize);
+    }
+
+    // JavaScript function to toggle invert colors class and switch moon icon to sun icon
+    function toggleInvertColors() {
+      let moonIcon = document.getElementById('moon-icon');
+      let isSun = moonIcon.innerHTML === '🌞'; // Check if current icon is sun
+
+      // Toggle invert colors class
+      document.body.classList.toggle('invert-colors');
+
+      // Toggle moon/sun icon
+      if (isSun) {
+        moonIcon.innerHTML = '🌜'; // Change to moon icon
+      } else {
+        moonIcon.innerHTML = '🌞'; // Change to sun icon
+      }
+    }
+
+    // Function to navigate to the desired link
+    function goToLink() {
+      window.location.href = "https://magiceden.io/ordinals/marketplace/runechaos"; // Replace "https://www.example.com" with your desired link
+    }
+  </script>
 </body>
 </html>
-  <script src='https://cdn.jsdelivr.net/npm/regl@1.3.1/dist/regl.min.js'></script><script  src="./script.js"></script>
+<!-- partial -->
+  <script  src="./rune.js"></script>
+
 </body>
 </html>
