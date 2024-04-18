@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>RUNE CHAOS</title>
+  <link rel="stylesheet" href="./rune.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html>
+<head>
+<audio autoplay loop volume="0.1">
+  <source src="https://cdn.discordapp.com/attachments/887521357548638249/1230559553024954418/2024-04-18_09-39-59_mp3cut.net.mp3?ex=6633c2e4&is=66214de4&hm=1a0919e0901bbeec5d1b24368f7f987c405bcd84466fef1488e6b0cbc728d810&" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+  <meta charset="UTF-8">
+  <title>Generative Runic Art</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.play.min.js"></script> <!-- Added p5.play library -->
+  <style>
+html {
+      user-select: none; /* Disable text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none; /* For Internet Explorer/Edge */
+    cursor: hidden;
+}
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      cursor: hidden;
+    }
+    #box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 550px;
+      height: 550px;
+      border: 10px solid black;
+      background-color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer; /* Add cursor pointer */
+      transition: transform 0.2s; /* Add transition for smooth scaling */
+    }
+    
+        /* Hover effect for the box */
+    #box:hover {
+      transform: translate(-50%, -50%) scale(1.008); /* Scale up by 5% on hover */
+    }
+
+    .runic-art {
+      width: 400px;
+      height: 400px;
+      background-color: #f1f1f1;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      animation: rotate 10s linear infinite;
+    }
+
+    .runic-symbol {
+      font-size: 40px;
+      color: #333;
+      position: absolute;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .runic-symbol:nth-child(1) {
+      top: 50px;
+      left: 50px;
+    }
+
+    .runic-symbol:nth-child(2) {
+      top: 50px;
+      right: 50px;
+    }
+
+    .runic-symbol:nth-child(3) {
+      bottom: 50px;
+      left: 50px;
+    }
+
+    .runic-symbol:nth-child(4) {
+      bottom: 50px;
+      right: 50px;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* CSS class to invert colors, excluding moon button */
+    .invert-colors:not(#moon-button) {
+      filter: invert(100%);
+    }
+
+    /* Moon button styling */
+    #moon-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      background-color: #333;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #moon-icon {
+      font-size: 24px;
+      color: #fff;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="box" onclick="goToLink()">
+    <div class="runic-symbol">ᚠ</div>
+    <div class="runic-symbol">ᚢ</div>
+    <div class="runic-symbol">ᚦ</div>
+    <div class="runic-symbol">ᚨ</div>
+  <p></p>
+  
+</div>
+
+<!-- Moon button -->
+<div id="moon-button" onclick="toggleInvertColors()">
+  <span id="moon-icon">🌜</span>
+</div>
+
+  <script>
+    // Set up the canvas
+    let canvas;
+    let cols, rows;
+    let cellSize = 20;
+
+    // Color palettes
+    let palettes = [
+      ['#ffcdd2', '#e53935', '#c62828', '#b71c1c'],
+      ['#bbdefb', '#2196f3', '#1565c0', '#0d47a1'],
+      ['#c8e6c9', '#4caf50', '#2e7d32', '#1b5e20'],
+      ['#ffe0b2', '#ff9800', '#f57c00', '#e65100']
+    ];
+
+    // Runic alphabet
+    let runicChars = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᚾ', 'ᛁ', 'ᛂ', 'ᛇ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛚ', 'ᛜ', 'ᛝ', 'ᛟ', 'ᛞ', 'ᚪ', 'ᚫ', 'ᚣ', 'ᛡ', 'ᛠ'];
+
+    // Time-related variables
+    let lastTime = 0;
+    let updateInterval = 0.01; // Update every 0.1 seconds
+
+    // Initialize the art
+    function setup() {
+      canvas = createCanvas(windowWidth, windowHeight);
+      cols = floor(windowWidth / cellSize);
+      rows = floor(windowHeight / cellSize);
+    }
+
+    // Draw the art
+    function draw() {
+      let currentTime = millis() / 1000; // Get the current time in seconds
+      let deltaTime = currentTime - lastTime; // Calculate the time since the last update
+
+      if (deltaTime >= updateInterval) {
+        background(255);
+
+        // Choose a random color palette
+        let palette = random(palettes);
+
+        // Draw the lines of characters
+        for (let x = 0; x < cols; x++) {
+          for (let y = 0; y < rows; y++) {
+            let xPos = x * cellSize;
+            let yPos = y * cellSize;
+            let char = random(runicChars);
+
+            // Set the fill color based on the mouse position
+            if (mouseX > xPos && mouseX < xPos + cellSize && mouseY > yPos && mouseY < yPos + cellSize) {
+              fill(palette[1]);
+            } else {
+              fill(palette[0]);
+            }
+
+            // Draw the character
+            textSize(cellSize * 0.8);
+            textAlign(CENTER, CENTER);
+            text(char, xPos + cellSize / 2, yPos + cellSize / 2);
+          }
+        }
+
+        lastTime = currentTime; // Update the last update time
+      }
+    }
+
+    // Resize the canvas when the window is resized
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+      cols = floor(windowWidth / cellSize);
+      rows = floor(windowHeight / cellSize);
+    }
+
+    // JavaScript function to toggle invert colors class and switch moon icon to sun icon
+    function toggleInvertColors() {
+      let moonIcon = document.getElementById('moon-icon');
+      let isSun = moonIcon.innerHTML === '🌞'; // Check if current icon is sun
+
+      // Toggle invert colors class
+      document.body.classList.toggle('invert-colors');
+
+      // Toggle moon/sun icon
+      if (isSun) {
+        moonIcon.innerHTML = '🌜'; // Change to moon icon
+      } else {
+        moonIcon.innerHTML = '🌞'; // Change to sun icon
+      }
+    }
+
+    // Function to navigate to the desired link
+    function goToLink() {
+      window.location.href = "https://magiceden.io/ordinals/marketplace/runechaos"; // Replace "https://www.example.com" with your desired link
+    }
+  </script>
+</body>
+</html>
+<!-- partial -->
+  <script  src="./rune.js"></script>
+
+</body>
+</html>
