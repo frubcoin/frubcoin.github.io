@@ -22,7 +22,8 @@ body {
   background: rgba(0, 0, 0, 0.7);
   border-radius: 15px;
   padding: 20px;
-  width: 400px;
+  width: 90%;
+  max-width: 400px;
   z-index: 2;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -172,6 +173,25 @@ h1 {
   background: rgba(255, 255, 255, 0.4); 
 }
 
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.2em;
+  }
+
+  .price-ticker {
+    font-size: 1em;
+  }
+
+  #price-history {
+    font-size: 1em;
+  }
+
+  #background-select,
+  #dark-mode-toggle {
+    font-size: 12px;
+    padding: 8px;
+  }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
