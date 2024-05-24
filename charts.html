@@ -1,6 +1,3 @@
-<html><head><base href="https://websim.ai/?hyperstitioning=true/use cryptocompare.com api to make a crypto price chart using a graphing JavaScript library, skin it in 98.css"><title>Crypto Price Chart</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link id="cssTheme" rel="stylesheet" href="https://unpkg.com/98.css">
 <style>
   body {
     font-family: 'Pixelated MS Sans Serif',Arial;
@@ -150,14 +147,14 @@
   }
 
   .xp-theme #time-options button:hover, .xp-theme #coin-options button:hover {
-    background: linear-gradient(to bottom, #fefcea, #f1da36);
-    color: black;
+    background-color: #316ac5;
+    color: white;
     text-shadow: none;
   }
 
   .xp-theme #coin-options button.active, .xp-theme #time-options button.active {
-    background: linear-gradient(to bottom, #fefcea, #f1da36);
-    color: black;
+    background-color: #316ac5;
+    color: white;
     text-shadow: none;
   }
   
@@ -269,7 +266,7 @@ function updateChart(limit, timeUnit, label) {
           label: `${currentCoin} Price (USD) - ${label}`,
           data: prices,
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          borderColor: xpTheme ? '#f1da36' : 'rgba(75, 192, 192, 1)',  // Change this line
+          borderColor: xpTheme ? '#316ac5' : 'rgba(75, 192, 192, 1)',  // Change this line
           borderWidth: 2,  // Make the line slightly thicker
           pointRadius: 0,
         }]
