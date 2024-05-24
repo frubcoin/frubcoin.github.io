@@ -1,0 +1,362 @@
+<html><head><base href="https://websim.ai/creative way of visualizing the eth live and historical price using a free public api use vanta.js add a dropdown with multiple vanta.js backgrounds"><style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Helvetica', Arial, sans-serif;
+}
+
+#background-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw; 
+  height: 100vh;
+  z-index: 0;
+}
+
+#data-window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 15px;
+  padding: 20px;
+  width: 400px;
+  z-index: 2;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s ease;
+  color: #fff;
+}
+
+#data-window.light-mode {
+  background: rgba(255, 255, 255, 0.7);
+  color: #000;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+#price-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 20px;
+}
+
+#live-ping {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #4CAF50;
+  margin-right: 10px;
+  animation: ping 1s ease-in-out infinite;
+  display: none;
+}
+
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+#price-ticker {
+  margin-left: 10px;
+  font-size: 1.5em;
+}
+
+.up {
+  color: #4CAF50;
+}
+
+.down {
+  color: #FF5722;
+}
+
+h1 {
+  margin: 0;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+#price-history {
+  font-size: 1.1em;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  transition: color 0.3s ease;
+}
+
+.history-item {
+  margin-bottom: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.light-mode .history-item {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+#background-select {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+#dark-mode-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1); 
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); 
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4); 
+}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.birds.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.clouds.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.cells.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
+</head>
+<body>
+<div id="background-canvas"></div>
+<div id="data-window">
+  <h2>ETH Price</h2>  
+  <div id="price-container">
+    <div id="live-ping"></div>
+    <h1 id="current-price">Loading...</h1>
+    <span id="price-ticker"></span>
+  </div>
+  <div id="price-history"></div>
+</div>
+<select id="background-select">
+  <option value="clouds" selected>Clouds</option>
+  <option value="waves">Waves</option>
+  <option value="dots">Dots</option>
+  <option value="birds">Birds</option>
+  <option value="cells">Cells</option>
+  <option value="globe">Globe</option>
+</select>
+<button id="dark-mode-toggle">Light Mode</button>
+<script>
+const API_URL = "https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD";
+const HISTORY_API_URL = "https://min-api.cryptocompare.com/data/v2/histominute?fsym=ETH&tsym=USD&limit=10";
+
+const priceElement = document.getElementById("current-price");
+const historyElement = document.getElementById("price-history");
+const backgroundSelect = document.getElementById("background-select"); 
+const darkModeToggle = document.getElementById("dark-mode-toggle");
+const dataWindow = document.getElementById("data-window");
+const livePing = document.getElementById("live-ping");
+const priceTicker = document.getElementById("price-ticker");
+
+let vantaEffect;
+let prevPrice = null;
+
+async function fetchPrice() {
+  const response = await fetch(API_URL);
+  const data = await response.json();
+  return data.USD;
+}
+
+async function fetchHistory() {
+  const response = await fetch(HISTORY_API_URL);
+  const data = await response.json();
+  return data.Data.Data;
+}
+
+function updatePrice(price) {
+  priceElement.innerText = `$${price.toFixed(2)}`;
+  livePing.style.display = 'block';
+
+  if (prevPrice !== null) {
+    if (price > prevPrice) {
+      priceTicker.innerText = '▲';
+      priceTicker.className = 'up';
+    } else if (price < prevPrice) {
+      priceTicker.innerText = '▼';
+      priceTicker.className = 'down';
+    } else {
+      priceTicker.innerText = '';
+      priceTicker.className = '';
+    }
+  }
+
+  prevPrice = price;
+}
+
+function updateHistory(history) {
+  historyElement.innerHTML = history.map(item => {
+    const date = new Date(item.time * 1000);
+    return `<div class="history-item">${date.toLocaleTimeString()}: $${item.close.toFixed(2)}</div>`;
+  }).join("");
+}
+
+function setBackground(type) {
+  if(vantaEffect) vantaEffect.destroy();
+
+  const options = {
+    el: "#background-canvas",
+    mouseControls: true,
+    touchControls: true,
+    gyroControls: false,
+    minHeight: 200.00,
+    minWidth: 200.00,
+  };
+
+  switch(type) {
+    case "waves":
+      vantaEffect = VANTA.WAVES({
+        ...options,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        color: 0x3fc7ff,
+        shininess: 50.00,
+        waveHeight: 15.00,
+        waveSpeed: 0.70,
+        zoom: 0.8
+      });
+      break;
+    case "dots":
+      vantaEffect = VANTA.DOTS({
+        ...options,
+        color: 0x6ac6ff,
+        color2: 0xff3f81,
+        backgroundColor: 0x23153c,
+        spacing: 23.00,
+        size: 2.70 
+      });
+      break;
+    case "birds":
+      vantaEffect = VANTA.BIRDS({
+        ...options,
+        backgroundColor: 0x0f1623,
+        color1: 0xff3f81,
+        color2: 0x6ac6ff,
+        colorMode: "lerp",
+        quantity: 3.00
+      });
+      break;
+    case "clouds":
+      vantaEffect = VANTA.CLOUDS({
+        ...options,
+        backgroundColor: 0x0e1c2d,
+        skyColor: 0x246e9c,
+        cloudColor: 0xffffff,
+        cloudShadowColor: 0x2a628f,
+        sunGradient: true,
+        sunPosition: 0.2,
+        speed: 0.8
+      });
+      break;
+    case "cells":
+      vantaEffect = VANTA.CELLS({
+        ...options,
+        color1: 0x5c00ff,
+        color2: 0xf9ff00,
+        size: 1.4,
+        speed: 1.7
+      });
+      break; 
+    case "globe":
+      vantaEffect = VANTA.GLOBE({
+        ...options,
+        backgroundColor: 0x020d18,
+        color: 0x4158d0,
+        color2: 0xc850c0,
+        size: 0.9,
+        distance: 250
+      });
+      break;
+  }
+}
+
+function toggleDarkMode() {
+  dataWindow.classList.toggle('light-mode');
+  if(dataWindow.classList.contains('light-mode')) {
+    darkModeToggle.innerText = 'Dark Mode';
+  } else {
+    darkModeToggle.innerText = 'Light Mode';
+  }
+}
+
+async function init() {
+  const price = await fetchPrice();
+  const history = await fetchHistory();
+  
+  updatePrice(price);
+  updateHistory(history.reverse());
+
+  setBackground(backgroundSelect.value);
+
+  backgroundSelect.addEventListener("change", (e) => {
+    setBackground(e.target.value);
+  });
+
+  darkModeToggle.addEventListener('click', toggleDarkMode);
+
+  setInterval(async () => {
+    const price = await fetchPrice();
+    updatePrice(price);
+  }, 10000);
+
+  setInterval(async () => {
+    const history = await fetchHistory();  
+    updateHistory(history.reverse());
+  }, 60000);
+}
+
+init();
+</script>
+</body>
+</html>
