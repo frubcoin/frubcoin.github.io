@@ -1,6 +1,6 @@
-<html><head><title> frubs crypto price charts</title>
+<html><head><base href="https://websim.ai/?hyperstitioning=true/use cryptocompare.com api to make a crypto price chart using a graphing JavaScript library, skin it in 98.css"><title>Crypto Price Chart</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/98.css">
+<link id="cssTheme" rel="stylesheet" href="https://unpkg.com/98.css">
 <style>
   body {
     font-family: 'Pixelated MS Sans Serif',Arial;
@@ -133,6 +133,34 @@
   #priceChart {
     cursor: none;
   }
+  
+  #theme-switcher {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .xp-theme {
+    background-color: #ece9d8 !important;
+    color: black !important;
+  }
+  
+  .xp-theme .title-bar-text {
+    color: black;
+  }
+
+  .xp-theme #time-options button:hover, .xp-theme #coin-options button:hover {
+    background: linear-gradient(to bottom, #fefcea, #f1da36);
+    color: black;
+    text-shadow: none;
+  }
+
+  .xp-theme #coin-options button.active, .xp-theme #time-options button.active {
+    background: linear-gradient(to bottom, #fefcea, #f1da36);
+    color: black;
+    text-shadow: none;
+  }
+  
 
 </style>  
 </head>
@@ -166,6 +194,7 @@
       <canvas id="priceChart" width="760" height="450"></canvas>  
     </div>
   </div>
+  <button id="theme-switcher">Switch to XP Theme</button> 
 </div>
 
 
@@ -178,6 +207,7 @@ Chart built by <a href="https://x.com/frubcoin">frub</a> with <a href="https://c
 <script>
 let myChart;
 let currentCoin = 'BTC';
+let xpTheme = false;  // Add this line
 
 function updateCoin(newCoin, fullName) {
   currentCoin = newCoin;
@@ -239,7 +269,7 @@ function updateChart(limit, timeUnit, label) {
           label: `${currentCoin} Price (USD) - ${label}`,
           data: prices,
           backgroundColor: 'rgba(75, 192, 192, 0.6)',
-          borderColor: 'rgba(75, 192, 192, 1)',
+          borderColor: xpTheme ? '#f1da36' : 'rgba(75, 192, 192, 1)',  // Change this line
           borderWidth: 2,  // Make the line slightly thicker
           pointRadius: 0,
         }]
@@ -263,8 +293,22 @@ function updateChart(limit, timeUnit, label) {
         },
         scales: {
           y: {
-            beginAtZero: false
-          }
+            beginAtZero: false,
+            grid: {
+              color: xpTheme ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',  // Add this block
+            },
+            ticks: {
+              color: xpTheme ? 'black' : 'white',  // Add this line
+            },
+          },
+          x: {  // Add this block
+            grid: {
+              color: xpTheme ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+            },
+            ticks: {
+              color: xpTheme ? 'black' : 'white', 
+            },
+          },
         },
         onHover: (e) => {
           const chartArea = e.chart.chartArea;
@@ -340,6 +384,31 @@ const externalTooltipHandler = (context) => {
   tooltipEl.style.top = positionY + tooltip.caretY + 'px';
   tooltipEl.style.color = tooltip.labelColors[0].backgroundColor;
 };
+
+// Theme Switcher
+const themeSwitcher = document.getElementById('theme-switcher');
+
+themeSwitcher.addEventListener('click', function() {
+  const cssTheme = document.getElementById('cssTheme');
+  const windowBody = document.querySelector('.window-body');
+  const chartContainer = document.getElementById('chart-container');
+  
+  if (cssTheme.getAttribute('href') === 'https://unpkg.com/98.css') {
+    cssTheme.setAttribute('href', 'https://unpkg.com/xp.css');
+    windowBody.classList.add('xp-theme');
+    chartContainer.classList.add('xp-theme');
+    this.textContent = 'Switch to 98 Theme';
+    xpTheme = true;
+  } else {
+    cssTheme.setAttribute('href', 'https://unpkg.com/98.css');
+    windowBody.classList.remove('xp-theme');
+    chartContainer.classList.remove('xp-theme');
+    this.textContent = 'Switch to XP Theme';
+    xpTheme = false;
+  }
+
+  updateChart(30, 'day', '30 Days');  // Update the chart after changing theme
+});
 
 // Initial chart load
 updateChart(30, 'day', '30 Days');
