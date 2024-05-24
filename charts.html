@@ -1,0 +1,347 @@
+<html><head><title> frubs crypto price charts</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/98.css">
+<style>
+  body {
+    font-family: 'Pixelated MS Sans Serif',Arial;
+    font-size: 16px;
+    background-color: teal;
+    color: black;
+    padding: 10px;
+  }
+  
+  h1 {
+    margin-bottom: 20px; 
+    text-align: center;
+    font-size: 28px;
+  }
+  
+  #chart-container {
+    background-color: #c0c0c0;
+    padding: 10px;
+    position: relative;
+  }
+  
+  .window {
+    width: 800px;
+    margin: 40px auto;
+  }
+  
+  footer {
+    margin-top: 50px;
+    text-align: center;
+    font-size: 18px;  
+  }
+  
+  footer a {
+    color: lightblue;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  
+  footer a:hover {
+    color: yellow;
+  }
+  
+  #time-options {
+    text-align: center;
+    margin: 30px 0;
+  }
+
+  #time-options button, #coin-options button {
+    margin: 0 10px;
+    font-size: 18px;
+    padding: 8px 16px;
+  }
+  
+  #time-options button:hover, #coin-options button:hover {
+    background-color: navy;
+    color: white; 
+    text-shadow: 1px 1px black;
+    cursor: pointer;
+  }
+
+  #coin-options {
+    text-align: center;
+    margin: 20px 0;
+  }
+  
+  #coin-options button.active, #time-options button.active {
+    background-color: navy;
+    color: white;
+    text-shadow: 1px 1px black; 
+  }
+  
+  #tooltip {
+    opacity: 0;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;  
+    padding: 8px;
+    pointer-events: none;
+    border-radius: 4px;
+    transition: opacity 0.2s ease;
+  }
+
+  .chartjs-tooltip {
+    opacity: 1;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 3px;
+    -webkit-transition: all .1s ease;
+    transition: all .1s ease;
+    pointer-events: none;
+    -webkit-transform: translate(-50%, 0);
+    transform: translate(-50%, 0);
+    padding: 4px;
+  }
+
+  .chartjs-tooltip-key {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+  }
+
+  .crosshair {
+    position: absolute;
+    background-color: black;  
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  #chart-container:hover .crosshair {
+    opacity: 1;
+  }
+
+  .crosshair-horizontal {
+    left: 0;
+    right: 0;
+    height: 1px;
+    transform: scaleY(0);
+  }
+  
+  .crosshair-vertical {
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: scaleX(0);
+  }
+
+  #priceChart {
+    cursor: none;
+  }
+
+</style>  
+</head>
+<body>
+<div class="window" style="margin: 40px auto; width: 800px">
+  <div class="title-bar">
+    <div class="title-bar-text"><span id="chartTitle">BTC</span> Price Chart</div>
+    <div class="title-bar-controls">
+      <button aria-label="Minimize"></button>
+      <button aria-label="Maximize"></button>
+      <button aria-label="Close"></button>
+    </div>
+  </div>
+  <div class="window-body">
+    <h1><span id="coinName">Bitcoin</span> Price Chart</h1>
+    <div id="coin-options">
+      <button id="btc-btn" class="active" onclick="updateCoin('BTC', 'Bitcoin')">BTC</button>
+      <button id="eth-btn" onclick="updateCoin('ETH', 'Ethereum')">ETH</button>
+      <button id="sol-btn" onclick="updateCoin('SOL', 'Solana')">SOL</button>
+    </div>
+    <div id="time-options">
+      <button id="24h-btn" onclick="updateChart(1, 'day', '24 Hours')">24h</button>
+      <button id="7d-btn" onclick="updateChart(7, 'day', '7 Days')">7d</button>  
+      <button id="30d-btn" class="active" onclick="updateChart(30, 'day', '30 Days')">30d</button>
+      <button id="90d-btn" onclick="updateChart(90, 'day', '90 Days')">90d</button>
+      <button id="1y-btn" onclick="updateChart(365, 'day', '1 Year')">1y</button>
+    </div>
+    <div id="chart-container">
+      <div class="crosshair crosshair-horizontal"></div>
+      <div class="crosshair crosshair-vertical"></div>
+      <canvas id="priceChart" width="760" height="450"></canvas>  
+    </div>
+  </div>
+</div>
+
+
+<footer>
+Chart built by <a href="https://x.com/frubcoin">frub</a> with <a href="https://chartjs.org">Chart.js</a> and price data from <a href="https://cryptocompare.com">CryptoCompare</a>. 
+</footer>
+
+<div id="tooltip"></div>
+
+<script>
+let myChart;
+let currentCoin = 'BTC';
+
+function updateCoin(newCoin, fullName) {
+  currentCoin = newCoin;
+  document.getElementById('chartTitle').textContent = newCoin;
+  document.getElementById('coinName').textContent = fullName;
+  
+  // Remove active class from all buttons
+  document.querySelectorAll('#coin-options button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Add active class to the selected coin button
+  document.getElementById(newCoin.toLowerCase() + '-btn').classList.add('active');
+  
+  updateChart(30, 'day', '30 Days');
+}
+
+function updateChart(limit, timeUnit, label) {
+
+  // Remove active class from all time buttons
+  document.querySelectorAll('#time-options button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // Add active class to the selected time button
+  let timeId;
+  switch(limit) {
+    case 1:
+      timeId = '24h';
+      break;
+    case 7:
+      timeId = '7d';
+      break;
+    case 30:
+      timeId = '30d';
+      break;
+    case 90:
+      timeId = '90d';
+      break;
+    case 365:
+      timeId = '1y';
+      break;
+  }
+  document.getElementById(timeId + '-btn').classList.add('active');
+
+
+  const apiKey = 'YOUR_API_KEY';  // Replace with your CryptoCompare API key
+  const apiUrl = `https://min-api.cryptocompare.com/data/v2/histo${timeUnit}?fsym=${currentCoin}&tsym=USD&limit=${limit}&api_key=${apiKey}`;
+
+  fetch(apiUrl)
+    .then(response => response.json()) 
+    .then(data => {
+      const prices = data.Data.Data.map(entry => entry.close);
+      const labels = data.Data.Data.map(entry => new Date(entry.time * 1000).toLocaleDateString());
+        
+      const chartData = {
+        labels: labels,
+        datasets: [{
+          label: `${currentCoin} Price (USD) - ${label}`,
+          data: prices,
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,  // Make the line slightly thicker
+          pointRadius: 0,
+        }]
+      };
+        
+      const chartOptions = {  
+        responsive: true,
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: false,
+            external: externalTooltipHandler,
+            position: 'nearest',
+          }  
+        },
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        },
+        onHover: (e) => {
+          const chartArea = e.chart.chartArea;
+
+          const crosshairHorizontal = document.querySelector('.crosshair-horizontal');
+          const crosshairVertical = document.querySelector('.crosshair-vertical');
+          
+          // Adjust the size, position, and visibility of crosshairs
+          crosshairHorizontal.style.top = e.y + 'px';
+          crosshairHorizontal.style.transform = e.y >= chartArea.top && e.y <= chartArea.bottom ? 'scaleY(1)' : 'scaleY(0)';
+          
+          crosshairVertical.style.left = e.x + 'px';
+          crosshairVertical.style.transform = e.x >= chartArea.left && e.x <= chartArea.right ? 'scaleX(1)' : 'scaleX(0)';
+        }
+      };
+
+      const ctx = document.getElementById('priceChart').getContext('2d');
+      
+      if (myChart) {
+        myChart.destroy();
+      }
+      
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: chartOptions  
+      });
+    })
+    .catch(error => {
+      console.error(`Error fetching ${currentCoin} price data:`, error);
+      alert(`Failed to load ${currentCoin} price data. Please check your API key and try again.`);
+    });
+}
+
+// Tooltip Handler
+const getOrCreateTooltip = (chart) => {
+  let tooltipEl = chart.canvas.parentNode.querySelector('#tooltip');
+  
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.id = 'tooltip';
+    chart.canvas.parentNode.appendChild(tooltipEl);
+  }
+
+  return tooltipEl;
+};
+
+const externalTooltipHandler = (context) => {
+  const { chart, tooltip } = context;
+  const tooltipEl = getOrCreateTooltip(chart);
+
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = 0;
+    return;
+  }
+
+  if (tooltip.body) {
+    const titleLines = tooltip.title || [];
+    const bodyLines = tooltip.body.map(b => b.lines);
+
+    const tooltipContent = [ 
+      ...titleLines,
+      ...bodyLines.map(body => body[0].split(': ').join(': $'))
+    ];
+
+    tooltipEl.innerHTML = tooltipContent.join('<br>');
+  }
+
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+
+  tooltipEl.style.opacity = 1;
+  tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+  tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+  tooltipEl.style.color = tooltip.labelColors[0].backgroundColor;
+};
+
+// Initial chart load
+updateChart(30, 'day', '30 Days');
+</script>
+</body></html>
