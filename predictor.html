@@ -159,13 +159,37 @@
 }
 p {
         font-size: 12px;
+        color: #525252;
+
 }
 
 a {
 text-decoration: none;
-        color: #fff;
+        color: #525252;
 
 }
+
+
+        .help-icon {
+            cursor: help;
+            font-size: 18px;
+            margin-left: 10px;
+            color: #fb54ef;
+        }
+
+
+        #videoPlayer {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #videoPlayer video {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +197,13 @@ text-decoration: none;
 <div class="title-container">
         <img src="https://files.catbox.moe/egpcdq.gif" alt="Mint Predictor" class="title-image">
 <p>Original Python script by <a href="https://x.com/emerplex">@emerplex</a>, ported to web by <a href="https://x.com/frubcoin">@frubcoin</a>.</p>
+                <span class="help-icon" id="helpIcon" style="font-size:11px;">need help? click here.</span>
+            <div id="videoPlayer">
+                <video controls>
+                    <source src="https://files.catbox.moe/noqzfk.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
 
     </div>
 
@@ -354,5 +385,11 @@ text-decoration: none;
         currentIndex = 0;
     }
     </script>
+    <script>
+        document.getElementById('helpIcon').addEventListener('click', function() {
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.style.display = videoPlayer.style.display === 'block' ? 'none' : 'block';
+        });
+ </script>
 </body>
 </html>
