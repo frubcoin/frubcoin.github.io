@@ -273,84 +273,87 @@
     }
 
     async function loadMore() {
-        saveInputs();
-        const baseUrl = document.getElementById('baseUrl').value.trim();
-        const ipfsHash = document.getElementById('ipfsHash').value.trim();
-        const rangeText = document.getElementById('editionRange').value.trim();
-        
-        if (!baseUrl || !ipfsHash || !rangeText) {
-            alert("Please enter a valid URL, IPFS hash, and edition range.");
-            return;
-        }
-        
-        const [start, end] = rangeText.split('-').map(Number);
-        
-        if (isNaN(start) || isNaN(end)) {
-            alert("Please enter a valid edition range (start-end).");
-            return;
-        }
-        
-        const container = document.getElementById('imageContainer');
-        
-        try {
-            const testUrl = `${baseUrl}/${ipfsHash}/${start}`;
-            const response = await fetch(testUrl);
-            if (!response.ok) throw new Error('Network response was not ok');
-        } catch (error) {
-            alert("The provided URL is not valid or accessible.");
-            return;
-        }
-        
-        const imagesToLoad = 50;
-        const loadPromises = [];
-        
-        for (let i = 0; i < imagesToLoad && currentIndex < end - start + 1; i++) {
-            const editionNumber = start + currentIndex;
-            const fullUrl = `${baseUrl}/${ipfsHash}/${editionNumber}`;
-            loadPromises.push(loadImage(fullUrl, editionNumber, container));
-            currentIndex++;
-        }
-        
-        await Promise.all(loadPromises);
+    saveInputs();
+    const baseUrl = document.getElementById('baseUrl').value.trim();
+    const ipfsHash = document.getElementById('ipfsHash').value.trim();
+    const rangeText = document.getElementById('editionRange').value.trim();
+    
+    if (!baseUrl || !ipfsHash || !rangeText) {
+        alert("Please enter a valid URL, IPFS hash, and edition range.");
+        return;
     }
+    
+    const [start, end] = rangeText.split('-').map(Number);
+    
+    if (isNaN(start) || isNaN(end)) {
+        alert("Please enter a valid edition range (start-end).");
+        return;
+    }
+    
+    const container = document.getElementById('imageContainer');
+    
+    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+    
+    try {
+        const testUrl = `${corsProxy}${baseUrl}/${ipfsHash}/${start}`;
+        const response = await fetch(testUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+    } catch (error) {
+        alert("The provided URL is not valid or accessible.");
+        return;
+    }
+    
+    const imagesToLoad = 50;
+    const loadPromises = [];
+    
+    for (let i = 0; i < imagesToLoad && currentIndex < end - start + 1; i++) {
+        const editionNumber = start + currentIndex;
+        const fullUrl = `${corsProxy}${baseUrl}/${ipfsHash}/${editionNumber}`;
+        loadPromises.push(loadImage(fullUrl, editionNumber, container));
+        currentIndex++;
+    }
+    
+    await Promise.all(loadPromises);
+}
 
-    async function loadImage(url, editionNumber, container) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const blob = await response.blob();
-            const imgUrl = URL.createObjectURL(blob);
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'image-wrapper';
-            
-            const img = document.createElement('img');
-            img.src = imgUrl;
-            img.addEventListener('click', () => showModal(imgUrl));
-            
-            const label = document.createElement('div');
-            label.textContent = editionNumber;
-            
-            wrapper.appendChild(img);
-            wrapper.appendChild(label);
-            
-            const images = Array.from(container.children).map(child => {
-                return {
-                    element: child,
-                    number: parseInt(child.querySelector('div').textContent)
-                };
-            });
-            images.push({element: wrapper, number: editionNumber});
-            
-            images.sort((a, b) => a.number - b.number);
-            
-            container.innerHTML = '';
-            images.forEach(image => container.appendChild(image.element));
-            
-        } catch (error) {
-            console.error('Error fetching image:', error);
-        }
+// Update the loadImage function as well
+async function loadImage(url, editionNumber, container) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        const imgUrl = URL.createObjectURL(blob);
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper';
+        
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.addEventListener('click', () => showModal(imgUrl));
+        
+        const label = document.createElement('div');
+        label.textContent = editionNumber;
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(label);
+        
+        const images = Array.from(container.children).map(child => {
+            return {
+                element: child,
+                number: parseInt(child.querySelector('div').textContent)
+            };
+        });
+        images.push({element: wrapper, number: editionNumber});
+        
+        images.sort((a, b) => a.number - b.number);
+        
+        container.innerHTML = '';
+        images.forEach(image => container.appendChild(image.element));
+        
+    } catch (error) {
+        console.error('Error fetching image:', error);
     }
+}
 
     function showModal(imgUrl) {
         const modal = document.getElementById('modal');
