@@ -1,0 +1,301 @@
+<html><head><base href="https://unpkg.com/98.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mint Predictor</title>
+  <link rel="stylesheet" href="https://unpkg.com/98.css">
+  <style>
+    body {
+      background-image: url('https://www.fillster.com/images/backgrounds/226b.gif');
+      background-repeat: repeat;
+      margin: 0;
+      padding: 20px;
+      overflow: hidden;
+    }
+    .window {
+      width: 95%;
+      height: 90vh;
+      margin: 20px auto;
+      resize: both;
+      overflow: hidden;
+      min-width: 200px;
+      min-height: 200px;
+    }
+    .window-body {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 20px);
+      overflow: hidden;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .controls .field-row {
+      margin-bottom: 10px;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+      justify-content: center;
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .gallery-item {
+      background-color: white;
+      border: 1px solid #848584;
+      box-shadow: inset 1px 1px #dfdfdf, 1px 1px #000;
+      padding: 2px;
+      display: flex;
+      flex-direction: column;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      background-color: #c3c7cb;
+      display: block;
+      flex-grow: 1;
+    }
+    .gallery-item p {
+      margin: 0;
+      padding: 5px;
+      text-align: center;
+      font-size: 12px;
+    }
+    #loadMoreBtn {
+      display: block;
+      margin: 20px auto;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.9);
+    }
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      border: 1px solid #848584;
+      box-shadow: inset 1px 1px #dfdfdf, 1px 1px #000;
+    }
+    .close {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .close:hover,
+    .close:focus {
+      color: #bbb;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #helpIcon {
+      width: 24px;
+      height: 24px;
+      vertical-align: middle;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    #helpVideo {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="title-bar">
+      <div class="title-bar-text">Mint Predictor</div>
+    </div>
+    <div class="window-body">
+      <div class="controls">
+        <div class="field-row-stacked">
+          <label for="baseUrl">Base URL:</label>
+          <input type="text" id="baseUrl" placeholder="Enter base URL">
+        </div>
+        <div class="field-row-stacked">
+          <label for="startNumber">Start Number:</label>
+          <input type="number" id="startNumber" min="1" placeholder="Enter start number">
+        </div>
+        <div class="field-row-stacked">
+          <label for="endNumber">End Number:</label>
+          <input type="number" id="endNumber" min="1" placeholder="Enter end number">
+        </div>
+        <div class="field-row">
+          <button id="applySettings">Apply Settings</button>
+          <button id="resetSettings">Reset</button>
+          <img id="helpIcon" src="https://win98icons.alexmeub.com/icons/png/help_book_big-0.png" alt="Help" title="Click for help">
+        </div>
+        <video id="helpVideo" controls>
+          <source src="https://i.imgur.com/hbZ28a0.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
+      <div class="gallery" id="imageGallery"></div>
+      <button id="loadMoreBtn">Load More</button>
+    </div>
+  </div>
+
+  <div id="imageModal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="modalImage">
+  </div>
+
+  <script>
+    let baseUrl = '';
+    let startNumber = '';
+    let endNumber = '';
+    let currentIndex;
+    const imagesPerLoad = 20;
+
+    const gallery = document.getElementById('imageGallery');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    const closeModal = document.getElementsByClassName('close')[0];
+    const applySettingsBtn = document.getElementById('applySettings');
+    const resetSettingsBtn = document.getElementById('resetSettings');
+    const windowEl = document.querySelector('.window');
+    const helpIcon = document.getElementById('helpIcon');
+    const helpVideo = document.getElementById('helpVideo');
+
+    function applySettings() {
+      baseUrl = document.getElementById('baseUrl').value;
+      startNumber = parseInt(document.getElementById('startNumber').value);
+      endNumber = parseInt(document.getElementById('endNumber').value);
+
+      if (!baseUrl || isNaN(startNumber) || isNaN(endNumber)) {
+        alert('Please fill in all fields with valid values.');
+        return;
+      }
+
+      currentIndex = startNumber;
+
+      // Clear existing gallery
+      gallery.innerHTML = '';
+      
+      // Reset load more button visibility
+      loadMoreBtn.style.display = 'block';
+
+      // Load initial set of images
+      loadImages();
+    }
+
+    function resetSettings() {
+      document.getElementById('baseUrl').value = '';
+      document.getElementById('startNumber').value = '';
+      document.getElementById('endNumber').value = '';
+      gallery.innerHTML = '';
+      loadMoreBtn.style.display = 'none';
+    }
+
+    function loadImages() {
+      for (let i = 0; i < imagesPerLoad && currentIndex <= endNumber; i++) {
+        const imageUrl = `${baseUrl}${currentIndex}`;
+
+        const galleryItem = document.createElement('div');
+        galleryItem.className = 'gallery-item';
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Dynamic image ${currentIndex}`;
+
+        const caption = document.createElement('p');
+        caption.textContent = `Image ${currentIndex}`;
+
+        galleryItem.appendChild(img);
+        galleryItem.appendChild(caption);
+        gallery.appendChild(galleryItem);
+
+        img.addEventListener('click', function() {
+          modal.style.display = 'block';
+          modalImg.src = this.src;
+        });
+
+        currentIndex++;
+      }
+
+      // Hide load more button if we've reached the end
+      if (currentIndex > endNumber) {
+        loadMoreBtn.style.display = 'none';
+      }
+    }
+
+    loadMoreBtn.addEventListener('click', loadImages);
+    applySettingsBtn.addEventListener('click', applySettings);
+    resetSettingsBtn.addEventListener('click', resetSettings);
+
+    closeModal.onclick = function() {
+      modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // Initially hide the load more button
+    loadMoreBtn.style.display = 'none';
+
+    // Dynamic resizing
+    let resizeTimeout;
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          const width = entry.contentRect.width;
+          const height = entry.contentRect.height;
+
+          // Adjust gallery grid
+          const minSize = Math.max(100, Math.min(width, height) / 4); // Minimum size of 100px
+          gallery.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minSize}px, 1fr))`;
+
+          // Adjust image sizes
+          const images = gallery.querySelectorAll('.gallery-item');
+          images.forEach(item => {
+            item.style.height = `${minSize}px`;
+          });
+
+          // Adjust video size
+          const videoWidth = Math.min(640, width - 40); // Max width of 640px, with 20px padding on each side
+          helpVideo.style.width = `${videoWidth}px`;
+          helpVideo.style.height = 'auto'; // Maintain aspect ratio
+        }, 100);
+      }
+    });
+
+    resizeObserver.observe(windowEl);
+
+    // Help icon functionality
+    helpIcon.addEventListener('click', function() {
+      if (helpVideo.style.display === 'none' || helpVideo.style.display === '') {
+        helpVideo.style.display = 'block';
+        helpVideo.play();
+      } else {
+        helpVideo.style.display = 'none';
+        helpVideo.pause();
+        helpVideo.currentTime = 0;
+      }
+    });
+  </script>
+</body>
+</html>
