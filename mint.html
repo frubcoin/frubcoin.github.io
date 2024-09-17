@@ -32,15 +32,18 @@
     .controls .field-row {
       margin-bottom: 10px;
     }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 20px;
-      justify-content: center;
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: 20px;
-    }
+/* Add smooth scrolling behavior */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+  justify-content: center;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+  scroll-behavior: smooth; /* Smooth scrolling */
+}
+
     .gallery-item {
       background-color: white;
       border: 1px solid #848584;
@@ -208,36 +211,47 @@
     }
 
     function loadImages() {
-      for (let i = 0; i < imagesPerLoad && currentIndex <= endNumber; i++) {
-        const imageUrl = `${baseUrl}${currentIndex}`;
+  const scrollPosition = gallery.scrollTop; // Store current scroll position
 
-        const galleryItem = document.createElement('div');
-        galleryItem.className = 'gallery-item';
+  for (let i = 0; i < imagesPerLoad && currentIndex <= endNumber; i++) {
+    const imageUrl = `${baseUrl}${currentIndex}`;
 
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.alt = `Dynamic image ${currentIndex}`;
+    const galleryItem = document.createElement('div');
+    galleryItem.className = 'gallery-item';
 
-        const caption = document.createElement('p');
-        caption.textContent = `Image ${currentIndex}`;
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = `Dynamic image ${currentIndex}`;
+    
+    // Add an event listener to ensure images load progressively
+    img.addEventListener('load', () => {
+      img.classList.add('loaded');
+    });
 
-        galleryItem.appendChild(img);
-        galleryItem.appendChild(caption);
-        gallery.appendChild(galleryItem);
+    const caption = document.createElement('p');
+    caption.textContent = `Image ${currentIndex}`;
 
-        img.addEventListener('click', function() {
-          modal.style.display = 'block';
-          modalImg.src = this.src;
-        });
+    galleryItem.appendChild(img);
+    galleryItem.appendChild(caption);
+    gallery.appendChild(galleryItem);
 
-        currentIndex++;
-      }
+    img.addEventListener('click', function() {
+      modal.style.display = 'block';
+      modalImg.src = this.src;
+    });
 
-      // Hide load more button if we've reached the end
-      if (currentIndex > endNumber) {
-        loadMoreBtn.style.display = 'none';
-      }
-    }
+    currentIndex++;
+  }
+
+  // Restore the scroll position
+  gallery.scrollTop = scrollPosition;
+
+  // Hide load more button if we've reached the end
+  if (currentIndex > endNumber) {
+    loadMoreBtn.style.display = 'none';
+  }
+}
+
 
     loadMoreBtn.addEventListener('click', loadImages);
     applySettingsBtn.addEventListener('click', applySettings);
