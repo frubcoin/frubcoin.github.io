@@ -1,3 +1,4 @@
+
 <html><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -389,7 +390,52 @@ display: none;
     </style>
     </head>
     <body>
-      <audio id="clickSound" src="your-sound-file.mp3"></audio>
+
+        <div id="fadein"></div>
+        <style>
+          /* For best practice, move CSS below to an external CSS file. */
+          @keyframes fadeinall {
+          0% {
+            opacity: 1; }
+          97% {
+            opacity: 0; }
+          98% {
+            opacity: 0;
+            -webkit-transform: translateY(0);
+            transform: translateY(0); }
+          100% {
+            opacity: 0;
+            -webkit-transform: translateY(-100%);
+            transform: translateY(-100%);
+            z-index: -1; } }
+          #fadein {
+            opacity: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-transform: translateY(0);
+            -ms-transform: translateY(0);
+            transform: translateY(0);
+            background-color: #000000;
+            z-index: 999;
+            -webkit-animation-fill-mode: forwards;
+            animation-fill-mode: forwards;
+            -webkit-animation: fadeinall 1s normal both;
+            animation: fadeinall 1s normal both;
+            -webkit-animation-delay: 0.3s;
+            animation-delay: 0.3s; }
+        </style>
+
+        <script type="text/javascript">
+        window.onload = function(){
+          setTimeout(function(){
+            document.getElementById("fadein").remove();
+          },1000);
+        };
+        </script>
+
       <div id="vignette-overlay"></div>
       <div id="film-grain-overlay"></div>
       <div id="visualizer-container"></div>
@@ -398,7 +444,7 @@ display: none;
           <header>
             <img src="https://i.imgur.com/VRZFfOF.png" alt="Frub's profile picture, stylized digital art" class="avatar" width="120" height="120">
             <h1>frub</h1>
-                        <h5 style="font-size: 15px;">web3? more like web me</h5>
+  
           </header>
           
           <section class="links">
@@ -412,34 +458,25 @@ display: none;
           <h4>Notice: I do not own all these projects, I just devloped the websites!</h4>
     
           <section class="portfolio">
-                 <div class="portfolio-item" onclick="openEmbedWindow('https://americasfinest.xyz/', 'America\'s Finest Terrorist Cell')">
+            <div class="portfolio-item" onclick="openEmbedWindow('https://americasfinest.xyz/', 'America\'s Finest Terrorist Cell')">
               <img src="https://americasfinest.xyz/favicon.ico" alt="America's Finest favicon" width="60" height="60">
               <div class="portfolio-info">
                 <h3>America's Finest Terrorist Cell</h3>
-                <p>Ordinals Art Project Site + Profile Picture Generator</p>
+                <p>Ordinals Art Project + Profile Picture Generator</p>
               </div>
             </div>
-            <div class="portfolio-item" onclick="openEmbedWindow('https://sleepystonedcat.xyz/', 'SLEEPY•STONED•CAT')">
+            <div class="portfolio-item" onclick="openEmbedWindow('https://sleepystonedcat.xyz/', 'SLEEPY•STONED•CAT bitcoin rune')">
               <img src="https://sleepystonedcat.xyz/favicon.ico" alt="SLEEPY•STONED•CAT favicon" width="60" height="60">
               <div class="portfolio-info">
                 <h3>SLEEPY•STONED•CAT</h3>
-                <p>Bitcoin Rune Project + Profile Picture Generator</p>
+                <p>Bitcoin Rune project + Profile Picture Generator</p>
               </div>
             </div>
-                            <div class="portfolio-item" onclick="openEmbedWindow('https://thiccness.xyz/', 'DIK•DIK•THICCNESS')">
+                            <div class="portfolio-item" onclick="openEmbedWindow('https://thiccness.xyz/', 'DIK•DIK•THICCNESS bitcoin rune')">
               <img src="https://thiccness.xyz/favicon.ico" alt="DIK•DIK•THICCNESS favicon" width="60" height="60">
               <div class="portfolio-info">
                 <h3>DIK•DIK•THICCNESS</h3>
-                <p>Bitcoin Rune Project</p>
-              </div>
-            </div>
-
-
-                                      <div class="portfolio-item" onclick="openEmbedWindow('https://axeltoinfinity.com/', 'DIK•DIK•THICCNESS')">
-              <img src="https://axeltoinfinity.com/favicon.ico" alt="AXEL•TO•INFINITY favicon" width="60" height="60">
-              <div class="portfolio-info">
-                <h3>AXEL•TO•INFINITY</h3>
-                <p>Bitcoin Rune Project + Profile Picture Generator</p>
+                <p>Bitcoin rune project</p>
               </div>
             </div>
     
