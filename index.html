@@ -128,7 +128,18 @@
       @media (max-width: 768px) {
     body {
       overflow: auto;
-                padding-top: 60px; /* Increase padding for mobile to avoid cutting off */
+  font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 700;
+      font-style: normal;
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        position: relative;
+    
 
     }
     .vignette::after {
@@ -136,6 +147,23 @@
 display: none;
 
     }
+
+.content-wrapper {
+    background-color: var(--bg-color);
+    width: 100%;
+    display: flex;
+    height: 100vh;
+    justify-content: center; /* Center the content horizontally */
+    align-items: center; /* Center the content vertically */
+    padding-top: 0; /* Remove extra padding */
+}
+      .container {
+    max-width: 600px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center; /* Center text inside the container */
+}   
 
     }
     
