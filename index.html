@@ -1,557 +1,561 @@
 <html><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>frub.bio</title>
     <meta charset="UTF-8">
-  <meta name="description" content="Frub.bio">
-  <meta name="keywords" content="HTML, CSS, JavaScript, frub, frubcoin">
-  <meta name="author" content="frub">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Encode+Sans+Expanded:wght@100;200;300;400;500;600;700;800;900&display=swap');
-  </style>
-
-<style>
-
-.encode-sans-expanded-thin {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 100;
-  font-style: normal;
-}
-
-.encode-sans-expanded-extralight {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 200;
-  font-style: normal;
-}
-.vignette {
-  position: relative;
-}
-
-.vignette:after {
-  border-radius: 10px;
-  -moz-box-shadow: 0 0 180px #696969;
-  -webkit-box-shadow: 0 0 180px #696969;
-  box-shadow: 0 0 180px #696969;
-  background-color: rgb(37, 37, 37, 0.7);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  content: "";
-  pointer-events: none;
-}
-
-
-h4 {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 300;
-  font-style: normal;
-  margin-top: -15px;
-  font-size: 10px;
-  text-align: center; /* Add this line to center the h4 text */
-}
-
-
-
-.encode-sans-expanded-light {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 300;
-  font-style: normal;
-}
-
-.encode-sans-expanded-regular {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 400;
-  font-style: normal;
-}
-
-.encode-sans-expanded-medium {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 500;
-  font-style: normal;
-}
-
-.encode-sans-expanded-semibold {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 600;
-  font-style: normal;
-}
-
-.encode-sans-expanded-bold {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 700;
-  font-style: normal;
-}
-
-.encode-sans-expanded-extrabold {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 800;
-  font-style: normal;
-}
-
-.encode-sans-expanded-black {
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 900;
-  font-style: normal;
-}
-
-
-  :root {
-    --bg-color: rgba(30, 30, 30, 0.7);
-    --text-color: #FFFFFF;
-    --accent-color: #FFFFFF;
-    --card-bg: rgba(42, 42, 42, 0.8);
-    --hover-color: rgba(255, 145, 0, 0.247);
-  }
-
-  body {
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>frub.bio</title>
+        <meta charset="UTF-8">
+      <meta name="description" content="Frub.bio">
+      <meta name="keywords" content="HTML, CSS, JavaScript, frub, frubcoin">
+      <meta name="author" content="frub">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Encode+Sans+Expanded:wght@100;200;300;400;500;600;700;800;900&display=swap');
+      </style>
     
-  font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 700;
-  font-style: normal;
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    position: relative;
-
-
-  }
-
-
-  @media (max-width: 768px) {
-body {
-  overflow: auto;
-}
+    <style>
+    
+    .encode-sans-expanded-thin {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 100;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-extralight {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 200;
+      font-style: normal;
+    }
+    .vignette {
+      position: relative;
+    }
+    
+    .vignette:after {
+      border-radius: 10px;
+      -moz-box-shadow: 0 0 180px #696969;
+      -webkit-box-shadow: 0 0 180px #696969;
+      box-shadow: 0 0 180px #696969;
+      background-color: rgb(37, 37, 37, 0.7);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      content: "";
+      pointer-events: none;
+      opacity: 0;
+    }
+    
+    
+    h4 {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 300;
+      font-style: normal;
+      margin-top: -15px;
+      font-size: 10px;
+      text-align: center; /* Add this line to center the h4 text */
+    }
+    
+    
+    
+    .encode-sans-expanded-light {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 300;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-regular {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 400;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-medium {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 500;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-semibold {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 600;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-bold {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 700;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-extrabold {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 800;
+      font-style: normal;
+    }
+    
+    .encode-sans-expanded-black {
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 900;
+      font-style: normal;
+    }
+    
+    
+      :root {
+        --bg-color: rgba(30, 30, 30, 0.7);
+        --text-color: #FFFFFF;
+        --accent-color: #FFFFFF;
+        --card-bg: rgba(42, 42, 42, 0.8);
+        --hover-color: rgba(255, 145, 0, 0.247);
+      }
+    
+      body {
+        
+      font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 700;
+      font-style: normal;
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        position: relative;
+    
+    
+      }
+    
+    
+      @media (max-width: 768px) {
+    body {
+      overflow: auto;
+    }
     .vignette::after {
 
 display: none;
 
     }
+
+    }
+    
+    
+    
+    #vignette-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9998;
+        background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 150%);
+      }
+    
+      #visualizer-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+    
+      .content-wrapper {
+        background-color: var(--bg-color);
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 40px;
+      }
+    
+      .container {
+        max-width: 600px;
+        width: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+    
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+    
+      .avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--accent-color);
+      }
+    
+      h1 {
+        font-size: 24px;
+        margin: 10px 0;
+        color: var(--accent-color);
+        font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 800;
+      font-style: normal;
+      }
+      h2 {
+        font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 800;
+      font-style: normal;
+      }
+    
+      p {
+        font-size: 16px;
+        opacity: 0.8;
+        margin-bottom: 20px;
+        font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 400;
+      font-style: normal;
+      }
+    
+      .links, .portfolio {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        z-index: 9999;
+      }
+    
+
+      .portfolio-item, h2, h4 {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      .link-item, .portfolio-item {
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        padding: 15px;
+        text-decoration: none;
+        color: var(--text-color);
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+  
+      }
+    
+      .link-item:hover, .portfolio-item:hover {
+        transform: translateY(-5px);
+        background-color: var(--hover-color);
+      }
+    
+      .link-icon, .portfolio-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 15px;
+      }
+    
+      .portfolio-item img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        border-radius: 5px;
+        margin-right: 15px;
+        background-color: transparent;
+        padding: 0;
+      }
+    
+      .portfolio-info h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+    
+      .portfolio-info p {
+        margin: 5px 0 0;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    
+      .links {
+        margin-bottom: 30px;
+      }
+    
+
+      
+      .embed-window {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        height: 80%;
+        background-color: var(--bg-color);
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        display: none;
+        flex-direction: column;
+        z-index: 10000; /* Increase this value */
+      }
+    
+      .embed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: var(--card-bg);
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+      }
+    
+      .embed-title {
+        font-size: 18px;
+        font-weight: bold;
+      }
+    
+      .embed-controls {
+        display: flex;
+        align-items: center;
+      }
+    
+      .embed-open-new-tab {
+        background-color: #000000;
+        color: #FFFFFF;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: "Encode Sans Expanded", sans-serif;
+      font-weight: 400;
+      font-style: normal;
+        font-size: 14px;
+        margin-right: 10px;
+        transition: background-color 0.3s ease;
+      }
+    
+      .embed-open-new-tab:hover {
+        background-color: var(--hover-color);
+      }
+    
+      .embed-close {
+        background: none;
+        border: none;
+        color: var(--text-color);
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0 5px;
+      }
+    
+      .embed-content {
+        flex-grow: 1;
+        border: none;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        scrollbar-color: #333 #1e1e1e;
+        scrollbar-width: thin;
+      }
+    
+      .embed-content::-webkit-scrollbar {
+        width: 12px;
+      }
+    
+      .embed-content::-webkit-scrollbar-track {
+        background: #1e1e1e;
+      }
+    
+      .embed-content::-webkit-scrollbar-thumb {
+        background-color: #333;
+        border-radius: 6px;
+        border: 3px solid #1e1e1e;
+      }
+    
+      .portfolio-title {
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 20px;
+        color: var(--accent-color);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+    
+      #film-grain-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9998; /* Adjust this value */
+        opacity: 0.2;
+        background-image: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="500" height="500" filter="url(%23noise)" opacity="0.5"/></svg>');
+      }
+    </style>
+    </head>
+    <body>
+      <audio id="clickSound" src="your-sound-file.mp3"></audio>
+      <div id="vignette-overlay"></div>
+      <div id="film-grain-overlay"></div>
+      <div id="visualizer-container"></div>
+      <div class="content-wrapper">
+        <div class="container vignette">
+          <header>
+            <img src="https://i.imgur.com/VRZFfOF.png" alt="Frub's profile picture, stylized digital art" class="avatar" width="120" height="120">
+            <h1>frub</h1>
+          </header>
+          
+          <section class="links">
+            <a href="https://x.com/frubcoin" target="_blank" rel="noopener noreferrer" class="link-item">
+              <svg class="link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
+              Twitter
+            </a>
+          </section>
+          
+          <h2 class="portfolio-title">My Web Creations</h2>
+          <h4>Notice: I do not own all these projects, I just devloped the websites!</h4>
+    
+          <section class="portfolio">
+            <div class="portfolio-item" onclick="openEmbedWindow('https://americasfinest.xyz/', 'America\'s Finest')">
+              <img src="https://americasfinest.xyz/favicon.ico" alt="America's Finest favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>America's Finest Terrorist Cell</h3>
+                <p>Ordinals Art Project + Profile Picture Generator</p>
+              </div>
+            </div>
+            <div class="portfolio-item" onclick="openEmbedWindow('https://sleepystonedcat.xyz/', 'SLEEPY•STONED•CAT bitcoin rune')">
+              <img src="https://sleepystonedcat.xyz/favicon.ico" alt="SLEEPY•STONED•CAT favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>SLEEPY•STONED•CAT</h3>
+                <p>Bitcoin Rune project + Profile Picture Generator</p>
+              </div>
+            </div>
+                            <div class="portfolio-item" onclick="openEmbedWindow('https://thiccness.xyz/', 'DIK•DIK•THICCNESS bitcoin rune')">
+              <img src="https://thiccness.xyz/favicon.ico" alt="DIK•DIK•THICCNESS favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>DIK•DIK•THICCNESS</h3>
+                <p>Bitcoin rune project</p>
+              </div>
+            </div>
+    
+            <div class="portfolio-item" onclick="openEmbedWindow('https://da.box/', 'Da Box')">
+              <img src="https://da.box/favicon.ico" alt="Da Box favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>da.box</h3>
+                <p>Discord Group Landing Page</p>
+              </div>
+            </div>
+            <div class="portfolio-item" onclick="openEmbedWindow('https://lilpuffs.github.io/puffos/', 'PuffOS')">
+              <img src="https://lilpuffs.github.io/puffos/favicon.ico" alt="PuffOS favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>PuffOS</h3>
+                <p>Adorable Web OS for Pixel Art Ordinals Project + Embeded Game</p>
+              </div>
+            </div>
+           
+            <div class="portfolio-item" onclick="openEmbedWindow('https://dungeon.nekoweb.org/', 'Neko Dungeon')">
+              <img src="https://dungeon.nekoweb.org/favicon.ico" alt="Neko Dungeon favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>Digital Dungeon</h3>
+                <p>Personal Geocities Style Site</p>
+              </div>
+            </div>
+            <div class="portfolio-item" onclick="openEmbedWindow('https://w33d.org/', 'W33D')">
+              <img src="https://w33d.org/favicon.ico" alt="W33D favicon" width="60" height="60">
+              <div class="portfolio-info">
+                <h3>w33d.org</h3>
+                <p>Another Personal Site for Fun</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    
+      <div class="embed-window" id="embedWindow">
+        <div class="embed-header">
+          <div class="embed-title" id="embedTitle"></div>
+          <div class="embed-controls">
+            <button class="embed-open-new-tab" onclick="openInNewTab()">Open in New Tab</button>
+            <button class="embed-close" onclick="closeEmbedWindow()">×</button>
+          </div>
+        </div>
+        <iframe class="embed-content" id="embedContent"></iframe>
+      </div>
+    
+      <script src="https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.min.js"></script>
+      <script src="https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js"></script>
+      <script>
+        let currentEmbedUrl = '';
+
+        window.onload = () => {
+  // Initialize Butterchurn visualizer
+  const canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.getElementById('visualizer-container').appendChild(canvas);
+
+  const visualizer = butterchurn.default.createVisualizer(window.audioContext || new AudioContext(), canvas, {
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+
+  // Get all presets
+  const presets = butterchurnPresets.getPresets();
+  const presetKeys = Object.keys(presets);
+
+  let currentPresetIndex = 0;
+
+  // Function to load the next preset
+  function loadNextPreset() {
+    currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
+    const preset = presets[presetKeys[currentPresetIndex]];
+    visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
+  }
+
+  // Load initial preset
+  loadNextPreset();
+
+  // Start the visualizer rendering
+  visualizer.setRendererSize(window.innerWidth, window.innerHeight);
+
+  function renderFrame() {
+    visualizer.render();
+    requestAnimationFrame(renderFrame);
+  }
+
+  renderFrame();
+
+  // Change preset every 14 seconds
+  setInterval(loadNextPreset, 14000);
+
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    visualizer.setRendererSize(window.innerWidth, window.innerHeight);
+  });
+
+  // Once the visualizer is loaded, trigger portfolio item animations
+  setTimeout(() => {
+    const items = document.querySelectorAll('.portfolio-item, h4, h2');
+    items.forEach((item, index) => {
+      setTimeout(() => {
+        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease';
+        item.style.opacity = '1';
+        item.style.transform = 'translateY(0)';
+      }, 100 * index); // Stagger the animation for each item
+    });
+  }, 500); // Adjust the delay to match when the visualizer is ready
+};
+
+
+// Film grain effect
+const filmGrainOverlay = document.getElementById('film-grain-overlay');
+
+function toggleFilmGrain() {
+  if (filmGrainOverlay.style.opacity === '0') {
+    filmGrainOverlay.style.opacity = '0.1';
+  } else {
+    filmGrainOverlay.style.opacity = '0';
+  }
 }
 
+document.addEventListener('F', toggleFilmGrain);
 
-
-  #vignette-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9998;
-    background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 150%);
-  }
-
-  #visualizer-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-  }
-
-  .content-wrapper {
-    background-color: var(--bg-color);
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 40px;
-  }
-
-  .container {
-    max-width: 600px;
-    width: 100%;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 30px;
-  }
-
-  .avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--accent-color);
-  }
-
-  h1 {
-    font-size: 24px;
-    margin: 10px 0;
-    color: var(--accent-color);
-    font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 800;
-  font-style: normal;
-  }
-  h2 {
-    font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 800;
-  font-style: normal;
-  }
-
-  p {
-    font-size: 16px;
-    opacity: 0.8;
-    margin-bottom: 20px;
-    font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 400;
-  font-style: normal;
-  }
-
-  .links, .portfolio {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    z-index: 9999;
-  }
-
-  .link-item, .portfolio-item {
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 15px;
-    text-decoration: none;
-    color: var(--text-color);
-    transition: transform 0.3s ease, background-color 0.3s ease;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-
-  }
-
-  .link-item:hover, .portfolio-item:hover {
-    transform: translateY(-5px);
-    background-color: var(--hover-color);
-  }
-
-  .link-icon, .portfolio-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 15px;
-  }
-
-  .portfolio-item img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    border-radius: 5px;
-    margin-right: 15px;
-    background-color: transparent;
-    padding: 0;
-  }
-
-  .portfolio-info h3 {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  .portfolio-info p {
-    margin: 5px 0 0;
-    font-size: 14px;
-    opacity: 0.7;
-  }
-
-  .links {
-    margin-bottom: 30px;
-  }
-
-  .embed-window {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    height: 80%;
-    background-color: var(--bg-color);
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    display: none;
-    flex-direction: column;
-    z-index: 10000; /* Increase this value */
-  }
-
-  .embed-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: var(--card-bg);
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-  }
-
-  .embed-title {
-    font-size: 18px;
-    font-weight: bold;
-  }
-
-  .embed-controls {
-    display: flex;
-    align-items: center;
-  }
-
-  .embed-open-new-tab {
-    background-color: #000000;
-    color: #FFFFFF;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-family: "Encode Sans Expanded", sans-serif;
-  font-weight: 400;
-  font-style: normal;
-    font-size: 14px;
-    margin-right: 10px;
-    transition: background-color 0.3s ease;
-  }
-
-  .embed-open-new-tab:hover {
-    background-color: var(--hover-color);
-  }
-
-  .embed-close {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 24px;
-    cursor: pointer;
-    padding: 0 5px;
-  }
-
-  .embed-content {
-    flex-grow: 1;
-    border: none;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
-    scrollbar-color: #333 #1e1e1e;
-    scrollbar-width: thin;
-  }
-
-  .embed-content::-webkit-scrollbar {
-    width: 12px;
-  }
-
-  .embed-content::-webkit-scrollbar-track {
-    background: #1e1e1e;
-  }
-
-  .embed-content::-webkit-scrollbar-thumb {
-    background-color: #333;
-    border-radius: 6px;
-    border: 3px solid #1e1e1e;
-  }
-
-  .portfolio-title {
-    font-size: 22px;
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: 20px;
-    color: var(--accent-color);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-  }
-
-  #film-grain-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9998; /* Adjust this value */
-    opacity: 0.2;
-    background-image: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="500" height="500" filter="url(%23noise)" opacity="0.5"/></svg>');
-  }
-</style>
-</head>
-<body>
-  <audio id="clickSound" src="your-sound-file.mp3"></audio>
-  <div id="vignette-overlay"></div>
-  <div id="film-grain-overlay"></div>
-  <div id="visualizer-container"></div>
-  <div class="content-wrapper">
-    <div class="container vignette">
-      <header>
-        <img src="https://i.imgur.com/VRZFfOF.png" alt="Frub's profile picture, stylized digital art" class="avatar" width="120" height="120">
-        <h1>frub</h1>
-      </header>
-      
-      <section class="links">
-        <a href="https://x.com/frubcoin" target="_blank" rel="noopener noreferrer" class="link-item">
-          <svg class="link-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
-          Twitter
-        </a>
-      </section>
-      
-      <h2 class="portfolio-title">My Web Creations</h2>
-      <h4>Notice: I do not own all these projects, I just devloped the websites!</h4>
-
-      <section class="portfolio">
-        <div class="portfolio-item" onclick="openEmbedWindow('https://americasfinest.xyz/', 'America\'s Finest')">
-          <img src="https://americasfinest.xyz/favicon.ico" alt="America's Finest favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>America's Finest Terrorist Cell</h3>
-            <p>Ordinals Art Project + Profile Picture Generator</p>
-          </div>
-        </div>
-        <div class="portfolio-item" onclick="openEmbedWindow('https://sleepystonedcat.xyz/', 'SLEEPY•STONED•CAT bitcoin rune')">
-          <img src="https://sleepystonedcat.xyz/favicon.ico" alt="SLEEPY•STONED•CAT favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>SLEEPY•STONED•CAT</h3>
-            <p>Bitcoin Rune project + Profile Picture Generator</p>
-          </div>
-        </div>
-
-                              <div class="portfolio-item" onclick="openEmbedWindow('https://axeltoinfinity.com/', 'AXEL•TO•INFINITY bitcoin rune')">
-          <img src="https://axeltoinfinity.com/favicon.ico" alt="AXEL•TO•INFINITY favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>AXEL•TO•INFINITY</h3>
-            <p>Bitcoin rune project profile picture generator</p>
-          </div>
-        </div>
-                        <div class="portfolio-item" onclick="openEmbedWindow('https://thiccness.xyz/', 'DIK•DIK•THICCNESS bitcoin rune')">
-          <img src="https://thiccness.xyz/favicon.ico" alt="DIK•DIK•THICCNESS favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>DIK•DIK•THICCNESS</h3>
-            <p>Bitcoin rune project</p>
-          </div>
-        </div>
-
-        <div class="portfolio-item" onclick="openEmbedWindow('https://da.box/', 'Da Box')">
-          <img src="https://da.box/favicon.ico" alt="Da Box favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>da.box</h3>
-            <p>Discord Group Landing Page</p>
-          </div>
-        </div>
-        <div class="portfolio-item" onclick="openEmbedWindow('https://lilpuffs.github.io/puffos/', 'PuffOS')">
-          <img src="https://lilpuffs.github.io/puffos/favicon.ico" alt="PuffOS favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>PuffOS</h3>
-            <p>Adorable Web OS for Pixel Art Ordinals Project + Embeded Game</p>
-          </div>
-        </div>
-       
-        <div class="portfolio-item" onclick="openEmbedWindow('https://dungeon.nekoweb.org/', 'Neko Dungeon')">
-          <img src="https://dungeon.nekoweb.org/favicon.ico" alt="Neko Dungeon favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>Digital Dungeon</h3>
-            <p>Personal Geocities Style Site</p>
-          </div>
-        </div>
-        <div class="portfolio-item" onclick="openEmbedWindow('https://w33d.org/', 'W33D')">
-          <img src="https://w33d.org/favicon.ico" alt="W33D favicon" width="60" height="60">
-          <div class="portfolio-info">
-            <h3>w33d.org</h3>
-            <p>Another Personal Site for Fun</p>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <div class="embed-window" id="embedWindow">
-    <div class="embed-header">
-      <div class="embed-title" id="embedTitle"></div>
-      <div class="embed-controls">
-        <button class="embed-open-new-tab" onclick="openInNewTab()">Open in New Tab</button>
-        <button class="embed-close" onclick="closeEmbedWindow()">×</button>
-      </div>
-    </div>
-    <iframe class="embed-content" id="embedContent"></iframe>
-  </div>
-
-  <script src="https://unpkg.com/butterchurn@2.6.7/lib/butterchurn.min.js"></script>
-  <script src="https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresets.min.js"></script>
-  <script>
-    let currentEmbedUrl = '';
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const items = document.querySelectorAll('.link-item, .portfolio-item');
-      items.forEach((item, index) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          item.style.transition = 'opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease';
-          item.style.opacity = '1';
-          item.style.transform = 'translateY(0)';
-        }, 100 * index);
-      });
-
-      // Initialize Butterchurn visualizer
-      const canvas = document.createElement('canvas');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      document.getElementById('visualizer-container').appendChild(canvas);
-
-      const visualizer = butterchurn.default.createVisualizer(window.audioContext || new AudioContext(), canvas, {
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-
-      // Get all presets
-      const presets = butterchurnPresets.getPresets();
-      const presetKeys = Object.keys(presets);
-
-      let currentPresetIndex = 0;
-
-      // Function to load the next preset
-      function loadNextPreset() {
-        currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
-        const preset = presets[presetKeys[currentPresetIndex]];
-        visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
-      }
-
-      // Load initial preset
-      loadNextPreset();
-
-      // Start the visualizer
-      visualizer.setRendererSize(window.innerWidth, window.innerHeight);
-
-      function renderFrame() {
-        visualizer.render();
-        requestAnimationFrame(renderFrame);
-      }
-
-      renderFrame();
-
-      // Change preset every 14 seconds
-      setInterval(loadNextPreset, 14000);
-
-      // Handle window resize
-      window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        visualizer.setRendererSize(window.innerWidth, window.innerHeight);
-      });
-    });
-
-    // Film grain effect
-    const filmGrainOverlay = document.getElementById('film-grain-overlay');
-
-    function toggleFilmGrain() {
-      if (filmGrainOverlay.style.opacity === '0') {
-        filmGrainOverlay.style.opacity = '0.1';
-      } else {
-        filmGrainOverlay.style.opacity = '0';
-      }
-    }
-
-    document.addEventListener('F', toggleFilmGrain);
-
-    function openEmbedWindow(url, title) {
+function openEmbedWindow(url, title) {
   const embedWindow = document.getElementById('embedWindow');
   const embedTitle = document.getElementById('embedTitle');
   const embedContent = document.getElementById('embedContent');
@@ -569,21 +573,20 @@ display: none;
   }
 }
 
+function openInNewTab() {
+  if (currentEmbedUrl) {
+    window.open(currentEmbedUrl, '_blank');
+  }
+}
 
-    function openInNewTab() {
-      if (currentEmbedUrl) {
-        window.open(currentEmbedUrl, '_blank');
-      }
-    }
+function closeEmbedWindow() {
+  const embedWindow = document.getElementById('embedWindow');
+  const embedContent = document.getElementById('embedContent');
 
-    function closeEmbedWindow() {
-      const embedWindow = document.getElementById('embedWindow');
-      const embedContent = document.getElementById('embedContent');
-
-      embedWindow.style.display = 'none';
-      embedContent.src = '';
-      currentEmbedUrl = '';
-    }
-  </script>
-
-</body></html>
+  embedWindow.style.display = 'none';
+  embedContent.src = '';
+  currentEmbedUrl = '';
+}
+      </script>
+    
+    </body></html>
