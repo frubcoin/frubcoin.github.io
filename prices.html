@@ -1,4 +1,4 @@
-<html><head><title>frub.bio | Crypto Prices</title>
+<html><head>
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap" rel="stylesheet">
@@ -31,21 +31,21 @@ body {
 
 #data-window {
 
-  letter-spacing: 1.05px;
+  letter-spacing: 0.065rem;
   position: absolute;
-  top: 35%;
-  left: 50%;
+  top: 35vh;
+  left: 50vw;
   transform: translate(-50%, -50%);
   background: rgba(0, 0, 0, 0.7);
-  border-radius: 15px;
-  padding: 20px;
-  width: 90%;
-  max-width: 410px;
+  border-radius: 0.9375rem;
+  padding: 1.25rem;
+  width: 90vw;
+  max-width: 25.8rem;
   z-index: 2;
   text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1), 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(0.625rem);
+  -webkit-backdrop-filter: blur(0.5rem);
   transition: background 0.3s ease;
   color: #fff;
 }
@@ -59,7 +59,8 @@ body {
 }
 
 h2 {
-  margin: 0 0 10px;
+
+  margin: 0 0 0.6rem;
   font-weight: 600;
   text-transform: uppercase;
   transition: color 0.3s ease;
@@ -69,10 +70,10 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 0 10px;
+  margin: 0 0 0.625rem;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 5px;
+  padding: 0.625rem;
+  border-radius: 0.3125rem;
   transition: background-color 0.3s ease;
   user-select: none;
 }
@@ -86,11 +87,11 @@ h2 {
 }
 
 .live-ping {
-  width: 10px;
-  height: 10px;
+  width: 0.625rem;
+  height: 0.625rem;
   border-radius: 50%;
   background-color: #4CAF50;
-  margin-right: 10px;
+  margin-right: 0.625rem;
   animation: ping 1s ease-in-out infinite;
   display: none;
 }
@@ -107,7 +108,7 @@ h2 {
 }
 
 .price-ticker {
-  margin-left: 10px;
+  margin-left: 0.625rem;
   font-size: 1.2em;
 }
 
@@ -133,23 +134,24 @@ h1 {
   display: flex;
   flex-direction: column-reverse;
   transition: max-height 0.3s ease-out;
-  margin-top: 10px;
+  margin-top: 0.625rem;
 }
 
 #price-history.expanded {
-  max-height: 200px;
+  max-height: 12.5rem;
   overflow-y: auto;
 }
 
 #history-toggle {
-  letter-spacing: 0.5px;
+
+  letter-spacing: 0.03125rem;
   background: none;
   border: none;
-  color: inherit;
+  color: #818181b9;
   cursor: pointer;
-  padding: 5px;
-  margin-top: 10px;
-  font-size: 0.5em;
+  padding: 0.3rem;
+  margin-top: 0.6rem;
+  font-size: 0.6em;
   opacity: 0.8;
   transition: opacity 0.3s ease;
 }
@@ -159,8 +161,8 @@ h1 {
 }
 
 .history-item {
-  margin-bottom: 10px;
-  padding: 5px 0;
+  margin-bottom: 0.625rem;
+  padding: 0.3125rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: border-color 0.3s ease;
 }
@@ -170,22 +172,22 @@ h1 {
 }
 
 #background-select {
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03125rem;
     text-decoration: none;
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0.625rem;
+  right: 0.625rem;
   z-index: 2;
-  padding: 6px;
+  padding: 0.375rem;
   font-size: 0.9em;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   background: rgba(51, 51, 51, 0.2);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.0);
   outline: none;
   cursor: pointer;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(0.3125rem);
+  -webkit-backdrop-filter: blur(0.3125rem);
 }
 
 #background-select option {
@@ -207,22 +209,22 @@ h1 {
 }
 
 #dark-mode-toggle {
-  letter-spacing: 0.5px;
+  letter-spacing: 0.03125rem;
   text-decoration: none;
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 0.625rem;
+  left: 0.625rem;
   z-index: 2;
-  padding: 6px;
+  padding: 0.375rem;
   font-size: 0.8em;
-  border-radius: 10px;
+  border-radius: 0.625rem;
   background: rgba(51, 51, 51, 0.2);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.0);
   outline: none;
   cursor: pointer;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(0.3125rem);
+  -webkit-backdrop-filter: blur(0.3125rem);
 }
 
 .light-mode #dark-mode-toggle {
@@ -233,17 +235,17 @@ h1 {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem;
 }
 
 ::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.1); 
-  border-radius: 10px;
+  border-radius: 0.625rem;
 }
  
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2); 
-  border-radius: 10px;
+  border-radius: 0.625rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -270,26 +272,26 @@ h1 {
 
   #background-select,
   #dark-mode-toggle {
-    font-size: 12px;
-    padding: 10px;
+    font-size: 0.75em;
+    padding: 0.625rem;
   }
 }
 
 #chart-window {
   position: fixed;
   background: rgba(0, 0, 0, 0.8);
-  border-radius: 15px;
-  padding: 20px 20px 30px 20px;
-  width: 600px;
-  height: 500px;
+  border-radius: 0.9375rem;
+  padding: 1.25rem 1.25rem 1.875rem 1.25rem;
+  width: 37.5vw;
+  height: 31.25vh;
   z-index: 3;
   display: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0.25rem 0.375rem rgba(0, 0, 0, 0.1), 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(0.625rem);
+  -webkit-backdrop-filter: blur(0.5rem);
   color: #fff;
-  left: 50%;
-  top: 95%;
+  left: 50vw;
+  top: 95vh;
   transform: translate(-50%, -50%);
   overflow: visible;
 }
@@ -307,7 +309,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 0.9375rem;
   cursor: move;
   user-select: none;
   color: inherit;
@@ -320,8 +322,8 @@ h1 {
 
 #chart-time-ranges {
   display: flex;
-  gap: 5px;
-  margin-left: 10px;
+  gap: 0.3125rem;
+  margin-left: 0.625rem;
   flex-wrap: wrap;
 }
 
@@ -329,8 +331,8 @@ h1 {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   color: inherit;
-  padding: 5px 8px;
-  border-radius: 4px;
+  padding: 0.3125rem 0.5rem;
+  border-radius: 0.25rem;
   cursor: pointer;
   font-size: 0.8em;
   transition: background-color 0.3s ease;
@@ -363,7 +365,7 @@ h1 {
   background: none;
   border: none;
   color: inherit;
-  font-size: 24px;
+  font-size: 1.5em;
   cursor: pointer;
   padding: 0;
   line-height: 1;
@@ -379,10 +381,10 @@ h1 {
 
 #price-chart {
   width: 100%;
-  height: calc(100% - 60px);
-  margin-top: 10px;
+  height: calc(100% - 3.75rem);
+  margin-top: 0.625rem;
   overflow: visible;
-  padding-bottom: 20px;
+  padding-bottom: 1.25rem;
 }
 
 .light-mode #chart-window {
@@ -392,19 +394,25 @@ h1 {
 
 @media (max-width: 600px) {
   #chart-window {
-    width: 90%;
-    height: 450px;
-    padding: 15px 15px 25px 15px;
+    width: 90vw;
+    height: 28.125vh;
+    padding: 0.9375rem 0.9375rem 1.5625rem 0.9375rem;
   }
   
   #chart-time-ranges {
-    gap: 3px;
+    gap: 0.1875rem;
   }
   
   .time-range-btn {
-    padding: 4px 6px;
+    padding: 0.25rem 0.375rem;
     font-size: 0.7em;
   }
+}
+
+p {
+  font-size: .75rem;
+
+
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -421,6 +429,7 @@ h1 {
 <div id="background-canvas"></div>
 <div id="data-window">
   <h2><b>Crypto Prices</b></h2>  
+  <p>Double click a ticker to pull up the chart.</p>
   <div class="price-container selected" id="eth-container">
     <div class="live-ping" id="eth-ping"></div>
     <h1 id="eth-price">ETH: Loading...</h1>
@@ -499,7 +508,8 @@ let prevPrices = {
 };
 let selectedCoin = 'ETH';
 let chart = null;
-let currentTimeRange = "10m";
+let currentTimeRange = "24h";
+let chartUpdateInterval;
 
 async function fetchPrices() {
   const response = await fetch(API_URL);
@@ -538,6 +548,20 @@ async function fetchHistory(coin, timeRange = "10m") {
   return data.Data.Data;
 }
 
+function updateGlobeColor(prices) {
+  const ethChange = prices.RAW.ETH.USD.CHANGEPCT24HOUR;
+  const btcChange = prices.RAW.BTC.USD.CHANGEPCT24HOUR;
+  const solChange = prices.RAW.SOL.USD.CHANGEPCT24HOUR;
+
+  const overallChange = ethChange + btcChange + solChange;
+
+  if (vantaEffect && vantaEffect instanceof VANTA.GLOBE) {
+    vantaEffect.setOptions({
+      color2: overallChange >= 0 ? 0x4CAF50 : 0xFF5722 // Green if up, Red if down
+    });
+  }
+}
+
 function updatePrices(prices) {
   const ethData = prices.RAW.ETH.USD;
   const btcData = prices.RAW.BTC.USD;
@@ -564,6 +588,8 @@ function updatePrices(prices) {
 
     prevPrices[coin] = data.PRICE;
   });
+
+  updateGlobeColor(prices); // Update globe color based on overall change
 }
 
 function updateHistory(history) {
@@ -691,13 +717,19 @@ function dragMoveListener(event) {
 }
 
 function createChart(coin, data, timeRange) {
+  const labels = data.map(item => formatTimeLabel(item.time, timeRange));
+  const prices = data.map(item => item.close);
+
   if (chart) {
-    chart.destroy();
+    // Update existing chart
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = prices;
+    chart.data.datasets[0].label = `${coin} Price (USD)`; // Update the dataset label
+    chart.update();
+    return;
   }
 
   const ctx = priceChart.getContext('2d');
-  const labels = data.map(item => formatTimeLabel(item.time, timeRange));
-  const prices = data.map(item => item.close);
 
   // Adjust chart options based on time range
   const chartOptions = {
@@ -767,11 +799,31 @@ function createChart(coin, data, timeRange) {
   });
 }
 
+function startChartUpdate(coin) {
+  if (chartUpdateInterval) {
+    clearInterval(chartUpdateInterval);
+  }
+  chartUpdateInterval = setInterval(async () => {
+    if (chartWindow.classList.contains('visible')) {
+      const history = await fetchHistory(coin, currentTimeRange);
+      createChart(coin, history, currentTimeRange);
+    }
+  }, 10000); // Update every 10 seconds
+}
+
+function stopChartUpdate() {
+  if (chartUpdateInterval) {
+    clearInterval(chartUpdateInterval);
+    chartUpdateInterval = null;
+  }
+}
+
 async function showChart(coin) {
   const history = await fetchHistory(coin, currentTimeRange);
   createChart(coin, history, currentTimeRange);
   document.getElementById("chart-title").textContent = `${coin} Chart`;
   chartWindow.classList.add("visible");
+  startChartUpdate(coin);
   
   // Get the main data window position
   const dataWindow = document.getElementById("data-window");
@@ -796,6 +848,7 @@ async function showChart(coin) {
 
 function closeChartWindow() {
   chartWindow.classList.remove("visible");
+  stopChartUpdate();
   if (chart) {
     chart.destroy();
     chart = null;
@@ -841,9 +894,9 @@ async function init() {
   darkModeToggle.addEventListener('click', toggleDarkMode);
   historyToggle.addEventListener('click', toggleHistory);
 
-  ethContainer.addEventListener('click', handleCoinClick('ETH'));
-  btcContainer.addEventListener('click', handleCoinClick('BTC'));
-  solContainer.addEventListener('click', handleCoinClick('SOL'));
+  ethContainer.addEventListener('dblclick', handleCoinClick('ETH'));
+  btcContainer.addEventListener('dblclick', handleCoinClick('BTC'));
+  solContainer.addEventListener('dblclick', handleCoinClick('SOL'));
 
   setInterval(async () => {
     const prices = await fetchPrices();
@@ -891,6 +944,14 @@ async function init() {
       e.target.classList.add("active");
       
       await updateChartTimeRange(coin, timeRange);
+    }
+  });
+
+  // Update the default active button for the time range
+  chartTimeRanges.querySelectorAll(".time-range-btn").forEach(btn => {
+    btn.classList.remove("active");
+    if (btn.dataset.range === "24h") {
+      btn.classList.add("active");
     }
   });
 }
