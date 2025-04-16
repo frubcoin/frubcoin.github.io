@@ -10,8 +10,8 @@
       }
     </style>
     <!-- Preload cursors -->
-    <link rel="preload" href="cursor.png" as="image" type="image/png">
-    <link rel="preload" href="pointer.png" as="image" type="image/png">
+    <link rel="preload" href="arrowhead-rounded-outline.svg" as="image" type="image/svg">
+    <link rel="preload" href="hand-pointer.svg" as="image" type="image/svg">
     <meta charset="UTF-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,7 +133,7 @@
 }
 
       body {
-        cursor: url('cursor.png'), auto;
+        cursor: url('arrowhead-rounded-outline.svg'), auto;
         font-family: "Special Gothic Expanded One", sans-serif;
         font-weight: 700;
         font-style: normal;
@@ -214,7 +214,8 @@ display: none;
         object-fit: cover;
         background-color: #d9d9d9;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 8 8'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath fill-rule='evenodd' d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E");
-        border: 0.2rem solid #FF9100;
+        border: 0.15rem solid #fffffffd;
+        outline: 0.15rem solid #ff9100ef;
       }
     
       h1 {
@@ -284,7 +285,8 @@ display: none;
         background-color: var(--hover-color);
       }
 
-      .link-item, .portfolio-item, .expand-button {
+      .link-item, .portfolio-item, .expand-button, .embed-open-new-tab, .embed-close {
+        cursor: url('hand-pointer.svg'), pointer;
         background-color: var(--card-bg);
         border-radius: 0.625rem;
         padding: 1rem;
@@ -294,7 +296,6 @@ display: none;
         display: flex;
         align-items: center;
         gap: 1rem;
-        cursor: url('pointer.png'), auto;
       }
     
       .link-item:hover, .portfolio-item:hover, .expand-button:hover {
@@ -388,7 +389,7 @@ display: none;
         border: none;
         padding: 0.3125rem 0.625rem;
         border-radius: 0.3125rem;
-        cursor: url('pointer.png'), auto;
+        cursor: url('hand-pointer.svg'), pointer;
         font-family: "Special Gothic Expanded One", sans-serif;
         font-size: 0.875rem;
         font-weight: 400;
@@ -406,7 +407,7 @@ display: none;
         border: none;
         color: var(--text-color);
         font-size: 1.5rem;
-        cursor: url('pointer.png'), auto;
+        cursor: url('hand-pointer.svg'), pointer;
         padding: 0 0.3125rem;
       }
     
@@ -415,7 +416,7 @@ display: none;
         border: none;
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
-        cursor: url('pointer.png'), auto;
+        cursor: url('hand-pointer.svg'), pointer;
       }
     
 
