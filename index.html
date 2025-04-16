@@ -1,4 +1,3 @@
-
 <html><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -119,6 +118,7 @@
     
 * {
     letter-spacing: 0.11rem;
+
 }
 
       body {
@@ -262,8 +262,14 @@ display: none;
         transition: none !important;
       }
 
-      .portfolio-item.animate, .portfolio h2.animate, .portfolio h4.animate {
-        transition: opacity 0.5s ease, transform 0.5s ease !important;
+      .portfolio-item.animate {
+        transition: opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease !important;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .portfolio-item:hover {
+        background-color: var(--hover-color);
       }
 
       .link-item, .portfolio-item, .expand-button {
