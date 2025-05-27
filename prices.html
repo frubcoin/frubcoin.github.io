@@ -4,6 +4,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap" rel="stylesheet">
   <style>
+    /* Set base font size using a combination of rem and vw for scaling */
+    html {
+      font-size: clamp(12px, 0.8rem + 0.5vw, 18px); /* Adjust values as needed */
+    }
+    
     * {
       font-family: "Special Gothic Expanded One", sans-serif;
     }
@@ -37,8 +42,8 @@
       background: rgba(0, 0, 0, 0.7);
       border-radius: 0.9375rem;
       padding: 1.25rem;
-      width: 110vw;
-      max-width: 28rem;
+      width: 90vw;
+      max-width: 30rem;
       z-index: 2;
       text-align: center;
       transition: background 0.3s ease;
@@ -145,7 +150,7 @@
     .history-item {
       margin-bottom: 0.625rem;
       padding: 0.3125rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 0.0625rem solid rgba(255, 255, 255, 0.1);
       transition: border-color 0.3s ease;
     }
     
@@ -161,7 +166,7 @@
       border-radius: 0.625rem;
       background: rgba(51, 51, 51, 0.2);
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.0);
+      border: 0.0625rem solid rgba(255, 255, 255, 0.0);
       outline: none;
       cursor: pointer;
       backdrop-filter: blur(0.3125rem);
@@ -185,7 +190,7 @@
       border-radius: 0.625rem;
       background: rgba(51, 51, 51, 0.2);
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.0);
+      border: 0.0625rem solid rgba(255, 255, 255, 0.0);
       outline: none;
       cursor: pointer;
       backdrop-filter: blur(0.3125rem);
@@ -212,16 +217,38 @@
     }
     
     @media (max-width: 600px) {
+      /* Ensure body allows scrolling if content overflows */
+      body {
+        overflow-y: auto;
+        overflow-x: hidden; /* Prevent horizontal scrolling */
+      }
+      
       html {
         overflow: hidden;
       }
       
       h1 {
         font-size: 1.2em;
+        /* Adjust margin for smaller screens */
+        margin-right: 0.3125rem; 
       }
     
       .price-ticker {
         font-size: 1em;
+        /* Ensure ticker doesn't take up too much space */
+        flex-shrink: 0;
+      }
+    
+      .price-container {
+        padding: 0.5rem; /* Slightly less padding */
+        margin-bottom: 0.5rem; /* Add some bottom margin */
+        /* Allow content to wrap if needed and align items */
+        flex-wrap: wrap; 
+        justify-content: center; /* Center content when wrapped */
+      }
+    
+      .price-container .price-ticker {
+        white-space: normal; /* Allow the ticker to wrap */
       }
     
       #price-history {
@@ -231,7 +258,34 @@
       #background-select,
       #dark-mode-toggle {
         font-size: 0.75em;
-        padding: 0.625rem;
+        padding: 0.375rem 0.5rem; /* Adjust padding */
+      }
+    
+      #data-window {
+        top: 50%; /* Center vertically */
+        width: 95vw; /* Use more of the screen width */
+        padding: 1rem; /* Adjust padding */
+      }
+    
+      #add-ticker-form {
+        flex-direction: column; /* Stack input and button */
+        gap: 0.75rem; /* Increase gap */
+        margin: 1.5rem 0; /* Adjust margin */
+      }
+    
+      #add-ticker-form input[type="text"],
+      #add-ticker-btn {
+        width: 100%; /* Make input and button full width */
+        box-sizing: border-box; /* Include padding and border in width */
+        text-align: center; /* Center text */
+      }
+    
+      #add-ticker-form input[type="text"] {
+        padding: 0.75rem 1rem; /* Adjust padding */
+      }
+    
+      #add-ticker-btn {
+        padding: 0.75rem 1.25rem; /* Adjust padding */
       }
     }
     
@@ -239,11 +293,11 @@
       position: fixed;
       background: rgba(0, 0, 0, 0.8);
       border-radius: 0.9375rem;
-      padding: 1.25rem 1.25rem 2.9rem 1.25rem;
-      width: 600px;
-      height: 400px;
-      min-width: 320px;
-      min-height: 200px;
+      padding: 1.25rem;
+      width: 80vw;
+      height: 60vh;
+      min-width: 20rem;
+      min-height: 12.5rem;
       max-width: 90vw;
       max-height: 80vh;
       z-index: 3;
@@ -325,8 +379,8 @@
     #price-chart {
       width: 100% !important;
       height: 100% !important;
-      min-width: 200px;
-      min-height: 120px;
+      min-width: 18.75rem;
+      min-height: 7.5rem;
       display: block;
     }
     
