@@ -516,9 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
         container.style.opacity = '';
         container.style.filter = '';
       }, 50);
+      this.innerHTML = eyeClosed;
     } else {
       // Hide animation
       container.classList.add('hidden');
+      this.innerHTML = eyeOpen;
     }
   };
   document.body.appendChild(hideViewBtn);
