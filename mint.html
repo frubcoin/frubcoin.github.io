@@ -9,14 +9,13 @@
       background-repeat: repeat;
       margin: 0;
       padding: 20px;
-      overflow: hidden;
     }
     .window {
       width: 95%;
       height: 90vh;
       margin: 20px auto;
       resize: both;
-      overflow: hidden;
+      overflow: auto;
       min-width: 200px;
       min-height: 200px;
     }
@@ -24,7 +23,7 @@
       display: flex;
       flex-direction: column;
       height: calc(100% - 20px);
-      overflow: hidden;
+      overflow: auto;
     }
     .controls {
       margin-bottom: 20px;
@@ -51,14 +50,26 @@
       padding: 2px;
       display: flex;
       flex-direction: column;
+      height: 100%; /* Ensure gallery item takes full height of grid cell */
     }
     .gallery-item img {
       width: 100%;
-      height: auto;
-      object-fit: contain;
+      height: 100%; /* Make image fill the height of its container */
+      object-fit: contain; /* Changed from cover to contain to avoid cropping */
       background-color: #c3c7cb;
       display: block;
       flex-grow: 1;
+      min-height: 100px; /* Ensure a minimum height during loading */
+    }
+    /* Add styles for loading state */
+    .gallery-item img:not(.loaded) {
+      background-color: #e0e0e0; /* Lighter gray placeholder background */
+      background-image: url('https://cdnjs.cloudflare.com/ajax/libs/galleriffic/2.0.1/css/loader.gif'); /* Simple loading spinner */
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .gallery-item img.loaded {
+      opacity: 1; /* Ensure full visibility when loaded */
     }
     .gallery-item p {
       margin: 0;
@@ -120,6 +131,17 @@
       max-width: 640px;
       margin-top: 20px;
     }
+    .baseUrl-example {
+      font-size: 0.8em;
+      color: #555;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin-top: 5px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      background-color: #f0f0f0;
+      max-width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -130,8 +152,8 @@
     <div class="window-body">
       <div class="controls">
         <div class="field-row-stacked">
-          <label for="baseUrl">Base URL:</label>
-          <input type="text" id="baseUrl" placeholder="Enter base URL">
+          <label for="baseUrl">Enter Base URL:</label>
+          <input type="text" id="baseUrl" placeholder="e.g. https://gateway.pinit.io/cdn-cgi/image/format=auto/https://na-assets.pinit.io/6WnkHqEv9q6zsuFhs6DQkWZU8pL34yqYo2RPQEQjXRRb/a2008e00-0fc9-4d62-825d-06b4f5887f77/">
         </div>
         <div class="field-row-stacked">
           <label for="startNumber">Start Number:</label>
@@ -144,12 +166,7 @@
         <div class="field-row">
           <button id="applySettings">Apply Settings</button>
           <button id="resetSettings">Reset</button>
-          <img id="helpIcon" src="https://win98icons.alexmeub.com/icons/png/help_book_big-0.png" alt="Help" title="Click for help">
-        </div>
-        <video id="helpVideo" controls>
-          <source src="https://i.imgur.com/hbZ28a0.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
+         
       </div>
       
       <div class="gallery" id="imageGallery"></div>
@@ -179,6 +196,39 @@
     const windowEl = document.querySelector('.window');
     const helpIcon = document.getElementById('helpIcon');
     const helpVideo = document.getElementById('helpVideo');
+    const baseUrlInput = document.getElementById('baseUrl');
+
+    // Intersection Observer for lazy loading images
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          const imageUrl = img.dataset.src;
+          if (imageUrl) {
+            img.src = imageUrl;
+            img.classList.add('loaded'); // Add loaded class when image starts loading
+
+            // Re-attach load and error listeners here
+            img.addEventListener('load', () => {
+              img.classList.add('loaded');
+            });
+            img.addEventListener('error', () => {
+              img.alt = 'Image failed to load'; // Display error message
+              img.style.backgroundColor = '#ffcccc'; // Light red background for error
+              img.style.backgroundImage = 'none'; // Remove spinner
+              img.classList.add('loaded'); // Mark as loaded even if error
+            });
+
+            // Re-attach click listener for modal
+            img.addEventListener('click', function() {
+              modal.style.display = 'block';
+              modalImg.src = this.src;
+            });
+          }
+          observer.unobserve(img); // Stop observing once loaded
+        }
+      });
+    });
 
     function applySettings() {
       baseUrl = document.getElementById('baseUrl').value;
@@ -192,8 +242,10 @@
 
       currentIndex = startNumber;
 
-      // Clear existing gallery
+      // Clear existing gallery and remove loaded class
       gallery.innerHTML = '';
+      const existingImages = gallery.querySelectorAll('.gallery-item img');
+      existingImages.forEach(img => img.classList.remove('loaded'));
       
       // Reset load more button visibility
       loadMoreBtn.style.display = 'block';
@@ -211,47 +263,46 @@
     }
 
     function loadImages() {
-  const scrollPosition = gallery.scrollTop; // Store current scroll position
+      const scrollPosition = gallery.scrollTop; // Store current scroll position
+      const fragment = document.createDocumentFragment(); // Create a document fragment
 
-  for (let i = 0; i < imagesPerLoad && currentIndex <= endNumber; i++) {
-    const imageUrl = `${baseUrl}${currentIndex}`;
+      for (let i = 0; i < imagesPerLoad && currentIndex <= endNumber; i++) {
+        const imageUrl = `${baseUrl}${currentIndex}`;
 
-    const galleryItem = document.createElement('div');
-    galleryItem.className = 'gallery-item';
+        const galleryItem = document.createElement('div');
+        galleryItem.className = 'gallery-item';
 
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = `Dynamic image ${currentIndex}`;
-    
-    // Add an event listener to ensure images load progressively
-    img.addEventListener('load', () => {
-      img.classList.add('loaded');
-    });
+        const img = document.createElement('img');
+        img.alt = `Dynamic image ${currentIndex}`;
+        img.src = ''; // Set a blank src initially or a placeholder image
+        img.dataset.src = imageUrl; // Store the actual URL in a data attribute
+        img.loading = 'lazy'; // Native lazy loading
 
-    const caption = document.createElement('p');
-    caption.textContent = `Image ${currentIndex}`;
+        // Append image before setting src to show loading spinner immediately
+        galleryItem.appendChild(img);
 
-    galleryItem.appendChild(img);
-    galleryItem.appendChild(caption);
-    gallery.appendChild(galleryItem);
+        const caption = document.createElement('p');
+        caption.textContent = `Image ${currentIndex}`;
 
-    img.addEventListener('click', function() {
-      modal.style.display = 'block';
-      modalImg.src = this.src;
-    });
+        galleryItem.appendChild(caption);
+        fragment.appendChild(galleryItem); // Append to fragment instead of gallery
 
-    currentIndex++;
-  }
+        // Observe the image for lazy loading
+        imageObserver.observe(img);
 
-  // Restore the scroll position
-  gallery.scrollTop = scrollPosition;
+        currentIndex++;
+      }
 
-  // Hide load more button if we've reached the end
-  if (currentIndex > endNumber) {
-    loadMoreBtn.style.display = 'none';
-  }
-}
+      gallery.appendChild(fragment); // Append the fragment to the gallery once
 
+      // Restore the scroll position
+      gallery.scrollTop = scrollPosition;
+
+      // Hide load more button if we've reached the end
+      if (currentIndex > endNumber) {
+        loadMoreBtn.style.display = 'none';
+      }
+    }
 
     loadMoreBtn.addEventListener('click', loadImages);
     applySettingsBtn.addEventListener('click', applySettings);
@@ -270,6 +321,13 @@
     // Initially hide the load more button
     loadMoreBtn.style.display = 'none';
 
+    // Auto-load on scroll
+    gallery.addEventListener('scroll', () => {
+      if (gallery.scrollTop + gallery.clientHeight >= gallery.scrollHeight - 100) { // 100px buffer
+        loadImages();
+      }
+    });
+
     // Dynamic resizing
     let resizeTimeout;
     const resizeObserver = new ResizeObserver(entries => {
@@ -286,7 +344,7 @@
           // Adjust image sizes
           const images = gallery.querySelectorAll('.gallery-item');
           images.forEach(item => {
-            item.style.height = `${minSize}px`;
+            // item.style.height = `${minSize}px`; // Removed explicit height setting
           });
 
           // Adjust video size
