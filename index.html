@@ -271,6 +271,14 @@
   transform-origin: center;
 }
 
+@media (max-width: 768px) {
+  .blurred-container {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(0, 0, 0, 0.7);
+  }
+}
+
 .blurred-container.hidden {
   opacity: 0;
   transform: translateY(-20px) scale(0.95) rotate(-1deg);
