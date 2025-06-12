@@ -123,7 +123,7 @@
           const audio = document.createElement('audio');
           audio.loop = true;
           audio.src = 'Curse is Lifted (Club rmx).mp3';
-          audio.volume = 0.1;
+          audio.volume = 0; // Set initial volume to 10%
 
           // Connect audio to visualizer
           const audioSource = audioContext.createMediaElementSource(audio);
@@ -168,11 +168,14 @@
           // Update mute button click handler
           muteBtn.onclick = function() {
             if (audio.paused) {
+              // Resume audio context if it was suspended
+              if (audioContext.state === 'suspended') {
+                audioContext.resume();
+              }
               audio.play();
               this.innerHTML = volumeOn;
               volumeSliderContainer.classList.add('visible');
               nowPlaying.classList.add('visible');
-              resetFadeTimeout(); // Reset fade when playing starts
             } else {
               audio.pause();
               this.innerHTML = volumeOff;
@@ -181,7 +184,6 @@
               // Reset volume slider to 10% when hiding
               volumeSlider.value = 10;
               audio.volume = 0.1;
-              resetFadeTimeout(); // Reset fade when playing stops
             }
           };
 
@@ -190,7 +192,6 @@
             muteBtn.innerHTML = volumeOff;
             volumeSliderContainer.classList.remove('visible');
             nowPlaying.classList.remove('visible');
-            resetFadeTimeout(); // Reset fade when audio ends
           });
         };
 
@@ -327,7 +328,6 @@
   width: 40px;
   height: 0;
   overflow: hidden;
-  transition: all 0.3s ease;
   z-index: 999;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 20px;
@@ -344,10 +344,16 @@
   height: 175px;
   opacity: 0.3;
   visibility: visible;
+  padding: 10px 0;
+  transition: height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 }
 
-.volume-slider-container.active {
-  opacity: 1;
+.volume-slider-container:not(.visible) {
+  height: 0;
+  opacity: 0;
+  padding: 0;
+  visibility: hidden;
+  transition: height 0.25s ease, opacity 0.25s ease, padding 0.25s ease, visibility 0s 0.25s;
 }
 
 .volume-slider {
@@ -362,6 +368,13 @@
   transform-origin: center;
   margin-top: 25px;
   margin-bottom: -5px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.volume-slider-container.visible .volume-slider {
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -371,7 +384,7 @@
   height: 24px;
   background: #ff9100;
   border-radius: 50%;
-  cursor: pointer;
+  cursor: url(hand-pointer.svg), pointer;
   margin-top: -10px;
   border: 2px solid #ffffff;
 }
@@ -381,7 +394,7 @@
   height: 24px;
   background: #ff9100;
   border-radius: 50%;
-  cursor: pointer;
+  cursor: url(hand-pointer.svg), pointer;
   border: 2px solid #ffffff;
 }
 
@@ -526,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const audio = document.createElement('audio');
   audio.loop = true;
   audio.src = 'Curse is Lifted (Club rmx).mp3';
-  audio.volume = 0.1;
+  audio.volume = 0.1; // Set initial volume to 10%
   
   muteBtn.innerHTML = volumeOff;
   muteBtn.onclick = function() {
@@ -535,7 +548,6 @@ document.addEventListener('DOMContentLoaded', function() {
       this.innerHTML = volumeOn;
       volumeSliderContainer.classList.add('visible');
       nowPlaying.classList.add('visible');
-      resetFadeTimeout(); // Reset fade when playing starts
     } else {
       audio.pause();
       this.innerHTML = volumeOff;
@@ -544,7 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
       // Reset volume slider to 10% when hiding
       volumeSlider.value = 10;
       audio.volume = 0.1;
-      resetFadeTimeout(); // Reset fade when playing stops
     }
   };
 
@@ -580,7 +591,6 @@ document.addEventListener('DOMContentLoaded', function() {
     muteBtn.innerHTML = volumeOff;
     volumeSliderContainer.classList.remove('visible');
     nowPlaying.classList.remove('visible');
-    resetFadeTimeout(); // Reset fade when audio ends
   });
 
   // Add button interaction handlers
@@ -589,18 +599,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function resetFadeTimeout() {
     clearTimeout(fadeTimeout);
-    audioElements.forEach(el => {
-      el.classList.add('active');
-      // Force a reflow to ensure the active class is applied
-      void el.offsetWidth;
-    });
+    audioElements.forEach(el => el.classList.add('active'));
     
     fadeTimeout = setTimeout(() => {
-      audioElements.forEach(el => {
-        el.classList.remove('active');
-        // Force a reflow to ensure the active class is removed
-        void el.offsetWidth;
-      });
+      audioElements.forEach(el => el.classList.remove('active'));
     }, 2000);
   }
 
@@ -617,9 +619,6 @@ document.addEventListener('DOMContentLoaded', function() {
   volumeSlider.addEventListener('mousedown', resetFadeTimeout);
   volumeSlider.addEventListener('mouseup', resetFadeTimeout);
 
-  // Initial state - all elements start at reduced opacity
-  audioElements.forEach(el => {
-    el.classList.remove('active');
-  });
+  // Don't call resetFadeTimeout initially - let elements start in reduced state
 });
 </script>
