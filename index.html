@@ -113,6 +113,7 @@
           function loadNextPreset() {
             currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
             const preset = presets[presetKeys[currentPresetIndex]];
+            console.log('Current preset:', presetKeys[currentPresetIndex]); // Log the current preset name
             visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
           }
 
