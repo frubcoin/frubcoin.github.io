@@ -146,16 +146,12 @@
 
     <script>
         // API Key Management
-        let apiKey = localStorage.getItem('pokemon_tcg_api_key') || 'f1560c51-cb92-477f-9a58-ac12bb1fd668';
+        let apiKey = localStorage.getItem('pokemon_tcg_api_key') || '';
         
         // Load saved API key on page load
         document.addEventListener('DOMContentLoaded', function() {
             if (apiKey) {
                 document.getElementById('api-key-input').value = apiKey;
-                // Auto-save the API key if it's not already saved
-                if (!localStorage.getItem('pokemon_tcg_api_key')) {
-                    localStorage.setItem('pokemon_tcg_api_key', apiKey);
-                }
             }
         });
         
