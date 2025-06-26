@@ -65,21 +65,68 @@
         </tbody>
     </table>
 
-    <div id="card-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative">
-            <span class="close-button text-2xl font-bold cursor-pointer absolute top-2 right-2">×</span>
-            <h2 id="card-name" class="text-2xl font-bold mb-4"></h2>
-            <img id="card-image" class="w-full h-auto mb-4 rounded" src="" alt="Card Image">
-            <p class="mb-2"><strong>HP:</strong> <span id="card-hp"></span></p>
-            <p class="mb-2"><strong>Types:</strong> <span id="card-types"></span></p>
-            <p class="mb-2"><strong>Attacks:</strong></p>
-            <ul id="card-attacks" class="list-disc pl-5 mb-4"></ul>
-            <p class="mb-2"><strong>Weaknesses:</strong> <span id="card-weaknesses"></span></p>
-            <p class="mb-2"><strong>Retreat Cost:</strong> <span id="card-retreat"></span></p>
-            <p class="mb-2"><strong>Set:</strong> <span id="card-set"></span></p>
-            <p class="mb-2"><strong>Rarity:</strong> <span id="card-rarity"></span></p>
-            <p class="mb-2"><strong>Artist:</strong> <span id="card-artist"></span></p>
-            <p class="mb-2"><strong>Price:</strong> <span id="card-price"></span></p>
+    <div id="card-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+                <span class="close-button text-3xl font-bold cursor-pointer absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors">×</span>
+                <h2 id="card-name" class="text-2xl font-bold text-gray-800 pr-8"></h2>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <div class="lg:w-1/2">
+                        <img id="card-image" class="w-full h-auto max-w-xs mx-auto rounded-lg shadow-lg" src="" alt="Card Image">
+                    </div>
+                    <div class="lg:w-1/2 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">HP</p>
+                                <p id="card-hp" class="text-lg font-bold text-gray-800"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">Types</p>
+                                <p id="card-types" class="text-lg font-bold text-gray-800"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-sm font-semibold text-gray-600 mb-2">Attacks</p>
+                            <ul id="card-attacks" class="space-y-2 text-sm text-gray-700"></ul>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">Weaknesses</p>
+                                <p id="card-weaknesses" class="text-sm text-gray-800"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">Retreat Cost</p>
+                                <p id="card-retreat" class="text-lg font-bold text-gray-800"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 p-3 rounded-lg">
+                            <p class="text-sm font-semibold text-gray-600 mb-1">Set</p>
+                            <p id="card-set" class="text-sm text-gray-800"></p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">Rarity</p>
+                                <p id="card-rarity" class="text-sm text-gray-800"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-600 mb-1">Artist</p>
+                                <p id="card-artist" class="text-sm text-gray-800"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <p class="text-sm font-semibold text-blue-600 mb-1">Market Price</p>
+                            <p id="card-price" class="text-xl font-bold text-blue-800"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
