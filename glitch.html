@@ -1,0 +1,899 @@
+<html><head><base href="." /><meta charset="utf-8">
+<title>Digital Glitch Art Generator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'cyber-green': '#00ff00',
+      }
+    }
+  }
+}
+</script>
+<style>
+.slider {
+    accent-color: #00ff00;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+video {
+    backdrop-filter: blur(10px);
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: -1;
+    filter: brightness(0.4) hue-rotate(120deg);
+}
+
+.bg-gray-800/90 {
+    backdrop-filter: blur(8px);
+}
+</style>
+</head><body class="bg-gray-900 text-cyber-green min-h-screen font-mono p-6">
+<div class="fixed inset-0 -z-10 overflow-hidden">
+    <video autoplay loop muted playsinline class="absolute min-w-full min-h-full object-cover">
+        <source src="1bg.webm" type="video/webm">
+    </video>
+</div>
+
+<div class="max-w-4xl mx-auto bg-gray-800/90 p-6 rounded-lg shadow-lg shadow-cyber-green/20">
+    <h1 class="text-2xl mb-6 text-center">Digital Glitch Art Generator</h1>
+    
+    <div class="border-2 border-dashed border-cyber-green p-8 text-center cursor-pointer mb-6 rounded-lg hover:border-opacity-75 transition-all" id="uploadArea">
+        <p>Drop image here or click to upload</p>
+        <input type="file" id="fileInput" accept="image/*" class="hidden">
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+            <label>Glitch Intensity:</label>
+            <input type="range" class="slider w-full" id="intensitySlider" min="0" max="100" value="50">
+            <p class="text-xs text-gray-400 mt-1">Controls the overall strength of glitch effects and distortions</p>
+        </div>
+        <div>
+            <label>Pixel Shift:</label>
+            <input type="range" class="slider w-full" id="pixelShiftSlider" min="0" max="100" value="30">
+            <p class="text-xs text-gray-400 mt-1">Shifts pixel blocks horizontally creating data-like corruption effects</p>
+        </div>
+        <div>
+            <label>Color Shift:</label>
+            <input type="range" class="slider w-full" id="colorShiftSlider" min="0" max="100" value="40">
+            <p class="text-xs text-gray-400 mt-1">Adjusts color channel misalignment and chromatic aberration</p>
+        </div>
+        <div>
+            <label>Noise Amount:</label>
+            <input type="range" class="slider w-full" id="noiseSlider" min="0" max="100" value="20">
+            <p class="text-xs text-gray-400 mt-1">Adds random pixel noise and static-like interference</p>
+        </div>
+        <div>
+            <label>Scanline Frequency:</label>
+            <input type="range" class="slider w-full" id="scanlineSlider" min="0" max="100" value="30">
+            <p class="text-xs text-gray-400 mt-1">Creates horizontal scan lines like old CRT displays</p>
+        </div>
+        <div>
+            <label>Wave Distortion:</label>
+            <input type="range" class="slider w-full" id="waveSlider" min="0" max="100" value="25">
+            <p class="text-xs text-gray-400 mt-1">Applies wave-like warping effects to the image</p>
+        </div>
+        <div>
+            <label>Compression Level:</label>
+            <input type="range" class="slider w-full" id="compressionSlider" min="0" max="100" value="35">
+            <p class="text-xs text-gray-400 mt-1">Simulates digital compression artifacts and blocking</p>
+        </div>
+        <div>
+            <label>RGB Split Amount:</label>
+            <input type="range" class="slider w-full" id="rgbSplitSlider" min="0" max="100" value="45">
+            <p class="text-xs text-gray-400 mt-1">Separates RGB color channels creating 3D anaglyph effects</p>
+        </div>
+        <div>
+            <label>JPEG Frying:</label>
+            <input type="range" class="slider w-full" id="jpegFrySlider" min="0" max="100" value="0">
+            <p class="text-xs text-gray-400 mt-1">Simulates repeated JPEG compression artifacts</p>
+        </div>
+    </div>
+
+    <div class="mb-6 p-4 bg-gray-700 rounded-lg">
+        <h2 class="text-xl mb-4">Protection Brush</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="protectionBrushToggle" class="hidden peer">
+                    <div class="w-11 h-6 bg-gray-700 rounded-full peer-checked:bg-cyber-green transition-all relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                    <span class="ml-2">Enable Protection Brush</span>
+                </label>
+            </div>
+            <div>
+                <label>Brush Size:</label>
+                <input type="range" class="slider w-full" id="brushSizeSlider" min="5" max="100" value="20">
+            </div>
+            <div>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="eraserToggle" class="hidden peer">
+                    <div class="w-11 h-6 bg-gray-700 rounded-full peer-checked:bg-cyber-green transition-all relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                    <span class="ml-2">Eraser Mode</span>
+                </label>
+            </div>
+            <p class="text-xs text-gray-400">Paint areas you want to protect from glitch effects. Use eraser to remove protection.</p>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-4 mb-6">
+        <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="clearToggle" class="hidden peer">
+            <div class="w-11 h-6 bg-gray-700 rounded-full peer-checked:bg-cyber-green transition-all relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+        </label>
+        <span>Clear canvas before each generation</span>
+    </div>
+
+    <div class="flex gap-4 mb-6">
+        <button id="generateBtn" class="w-32 bg-cyber-green text-black px-6 py-2 rounded hover:scale-105 transition-transform">Generate Glitch</button>
+        <button id="downloadBtn" class="w-32 bg-cyber-green text-black px-6 py-2 rounded hover:scale-105 transition-transform">Download Result</button>
+        <button id="undoBtn" class="w-24 bg-gray-700 text-cyber-green px-6 py-2 rounded hover:scale-105 transition-transform">Undo</button>
+        <button id="removeEffectsBtn" class="w-36 bg-gray-700 text-cyber-green px-6 py-2 rounded hover:scale-105 transition-transform">Remove Effects</button>
+        <button id="switchModeBtn" class="w-44 bg-gray-700 text-cyber-green px-6 py-2 rounded hover:scale-105 transition-transform">Switch to Single Mode</button>
+    </div>
+
+    <canvas id="canvas" class="w-full border border-cyber-green rounded-lg"></canvas>
+    <canvas id="uiOverlay" class="absolute top-0 left-0 pointer-events-none" style="display:none;"></canvas>
+
+    <div id="modeSelect" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-gray-800 p-6 rounded-lg border-2 border-cyber-green">
+            <h2 class="text-xl mb-4">Choose Mode</h2>
+            <div class="flex gap-4">
+                <button id="singleMode" class="bg-cyber-green text-black px-6 py-2 rounded hover:scale-105 transition-transform">Single Image</button>
+                <button id="collageMode" class="bg-cyber-green text-black px-6 py-2 rounded hover:scale-105 transition-transform">Collage Mode</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const uiOverlay = document.getElementById('uiOverlay');
+const uiCtx = uiOverlay.getContext('2d');
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const generateBtn = document.getElementById('generateBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const undoBtn = document.getElementById('undoBtn');
+const removeEffectsBtn = document.getElementById('removeEffectsBtn');
+const switchModeBtn = document.getElementById('switchModeBtn');
+switchModeBtn.style.display = 'none';  
+let originalImage = null;
+let collageImages = [];
+let isDragging = false;
+let dragTarget = null;
+let dragOffset = { x: 0, y: 0 };
+let undoStack = [];
+const MAX_UNDO = 10;
+
+let isCollageMode = false;
+let activeImage = null;
+let isResizing = false;
+let resizeHandle = null;
+let isFirstUpload = true;
+let protectionMask = null;
+let isProtectionPainting = false;
+
+function getCanvasMousePosition(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+function initProtectionMask() {
+    if (!canvas.width || !canvas.height) return;
+    protectionMask = new Uint8ClampedArray(canvas.width * canvas.height).fill(0);
+}
+
+function saveState() {
+    if (undoStack.length >= MAX_UNDO) {
+        undoStack.shift();
+    }
+    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+}
+
+undoBtn.addEventListener('click', () => {
+    if (undoStack.length > 0) {
+        ctx.putImageData(undoStack.pop(), 0, 0);
+    }
+});
+
+// Upload handling
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('border-opacity-75');
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('border-opacity-75');
+});
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-opacity-75');
+    const file = e.dataTransfer.files[0];
+    handleImage(file);
+});
+
+fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    handleImage(file);
+});
+
+function handleImage(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return;
+    
+    const modal = document.getElementById('modeSelect');
+    if (!modal) {
+        processUploadedFile(file, false);
+        return;
+    }
+    
+    showModeSelect(file);
+}
+
+function showModeSelect(file) {
+    if (!isFirstUpload) {
+        processUploadedFile(file, isCollageMode);
+        return;
+    }
+    
+    const modal = document.getElementById('modeSelect');
+    const singleModeBtn = document.getElementById('singleMode');
+    const collageModeBtn = document.getElementById('collageMode');
+    
+    if (!modal || !singleModeBtn || !collageModeBtn) {
+        processUploadedFile(file, false);
+        return;
+    }
+    
+    modal.style.display = 'flex';
+    
+    singleModeBtn.onclick = () => {
+        isCollageMode = false;
+        modal.style.display = 'none';
+        processUploadedFile(file, false);
+        isFirstUpload = false;
+        if (switchModeBtn) {
+            switchModeBtn.textContent = "Switch to Collage Mode";
+            switchModeBtn.style.display = 'block';
+        }
+    };
+    
+    collageModeBtn.onclick = () => {
+        isCollageMode = true;
+        modal.style.display = 'none';
+        processUploadedFile(file, true);
+        isFirstUpload = false;
+        if (switchModeBtn) {
+            switchModeBtn.textContent = "Switch to Single Mode";
+            switchModeBtn.style.display = 'block';
+        }
+    };
+}
+
+function drawProtectionBrush(x, y) {
+    if (!document.getElementById('protectionBrushToggle').checked) return;
+    
+    const brushSize = parseInt(document.getElementById('brushSizeSlider').value);
+    const isEraser = document.getElementById('eraserToggle').checked;
+    
+    uiCtx.clearRect(0, 0, uiOverlay.width, uiOverlay.height);
+    
+    // Draw current brush position
+    uiCtx.beginPath();
+    uiCtx.arc(x, y, brushSize/2, 0, Math.PI * 2);
+    if (isEraser) {
+        uiCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        uiCtx.lineWidth = 2;
+        uiCtx.stroke();
+        uiCtx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+    } else {
+        uiCtx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+    }
+    uiCtx.fill();
+    
+    // Draw existing protection mask
+    const imageData = uiCtx.createImageData(uiOverlay.width, uiOverlay.height);
+    for (let i = 0; i < protectionMask.length; i++) {
+        if (protectionMask[i]) {
+            const idx = i * 4;
+            imageData.data[idx] = 0;
+            imageData.data[idx + 1] = 255;
+            imageData.data[idx + 2] = 0;
+            imageData.data[idx + 3] = 50;
+        }
+    }
+    uiCtx.putImageData(imageData, 0, 0);
+}
+
+function paintProtection(x, y) {
+    const brushSize = document.getElementById('brushSizeSlider').value;
+    const isEraser = document.getElementById('eraserToggle').checked;
+    const radius = brushSize / 2;
+    
+    for (let py = Math.max(0, y - radius); py < Math.min(canvas.height, y + radius); py++) {
+        for (let px = Math.max(0, x - radius); px < Math.min(canvas.width, x + radius); px++) {
+            if (Math.hypot(px - x, py - y) <= radius) {
+                protectionMask[py * canvas.width + px] = isEraser ? 0 : 1;
+            }
+        }
+    }
+}
+
+// Modify the processUploadedFile function
+function processUploadedFile(file, collageMode) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        originalImage = new Image();
+        originalImage.onload = () => {
+            switchModeBtn.style.display = 'block';
+            
+            const protectionToggle = document.getElementById('protectionBrushToggle');
+            const brushSizeSlider = document.getElementById('brushSizeSlider');
+            const eraserToggle = document.getElementById('eraserToggle');
+            const protectionContainer = protectionToggle.closest('.mb-6');
+            
+            protectionContainer.style.display = collageMode ? 'none' : 'block';
+            protectionToggle.checked = false;
+            protectionToggle.disabled = collageMode;
+            brushSizeSlider.disabled = collageMode;
+            eraserToggle.checked = false;
+            eraserToggle.disabled = collageMode;
+
+            if (!collageMode) {
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(originalImage, 0, 0);
+                collageImages = [];
+                
+                initProtectionMask();
+                
+                uiOverlay.width = canvas.width;
+                uiOverlay.height = canvas.height;
+                uiOverlay.style.position = 'absolute';
+                uiOverlay.style.left = canvas.offsetLeft + 'px';
+                uiOverlay.style.top = canvas.offsetTop + 'px';
+                uiOverlay.style.width = canvas.offsetWidth + 'px';
+                uiOverlay.style.height = canvas.offsetHeight + 'px';
+                uiOverlay.style.display = 'block';
+            } else {
+                if (collageImages.length === 0) {
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                }
+                
+                const newImage = {
+                    image: originalImage,
+                    x: 0,
+                    y: 0,
+                    width: originalImage.width,
+                    height: originalImage.height
+                };
+                collageImages.push(newImage);
+                redrawCollage();
+            }
+        };
+        originalImage.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+generateBtn.addEventListener('click', () => {
+    if (!originalImage) return;
+    
+    saveState();
+    
+    if (isCollageMode) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(canvas, 0, 0);
+        
+        const clearCanvas = document.getElementById('clearToggle').checked;
+        
+        if (clearCanvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            collageImages.forEach(img => {
+                ctx.drawImage(img.image, img.x, img.y, img.width, img.height);
+            });
+        }
+    } else {
+        const clearCanvas = document.getElementById('clearToggle').checked;
+        if (clearCanvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(originalImage, 0, 0);
+        }
+    }
+    
+    applyGlitchEffects();
+});
+
+// Mouse event handlers for dragging and resizing
+canvas.addEventListener('mousedown', (e) => {
+    if (!isCollageMode && document.getElementById('protectionBrushToggle').checked) {
+        isProtectionPainting = true;
+        const pos = getCanvasMousePosition(e);
+        paintProtection(Math.floor(pos.x), Math.floor(pos.y));
+        return;
+    }
+    startDrag(e);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    const pos = getCanvasMousePosition(e);
+    
+    if (!isCollageMode && document.getElementById('protectionBrushToggle').checked) {
+        drawProtectionBrush(pos.x, pos.y);
+        if (isProtectionPainting) {
+            paintProtection(Math.floor(pos.x), Math.floor(pos.y));
+        }
+        return;
+    }
+    drag(e);
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    isProtectionPainting = false;
+    endDrag();
+});
+canvas.addEventListener('mouseleave', (e) => {
+    isProtectionPainting = false; 
+    endDrag();
+});
+
+function endDrag() {
+    isDragging = false;
+    isResizing = false;
+    dragTarget = null;
+    activeImage = null;
+    resizeHandle = null;
+}
+
+function startDrag(e) {
+    if (!isCollageMode) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    for (let i = collageImages.length - 1; i >= 0; i--) {
+        const img = collageImages[i];
+        
+        // Increase handle detection area
+        const handleSize = 20; // Make this smaller for more precise detection
+        
+        // Check resize handles first
+        if (Math.abs(x - (img.x + img.width)) <= handleSize && 
+            Math.abs(y - (img.y + img.height)) <= handleSize) {
+            isResizing = true;
+            activeImage = img;
+            resizeHandle = 'br';
+            return;
+        }
+        if (Math.abs(x - (img.x + img.width)) <= handleSize && 
+            Math.abs(y - img.y) <= handleSize) {
+            isResizing = true;
+            activeImage = img;
+            resizeHandle = 'tr';
+            return;
+        }
+        if (Math.abs(x - img.x) <= handleSize && 
+            Math.abs(y - (img.y + img.height)) <= handleSize) {
+            isResizing = true;
+            activeImage = img;
+            resizeHandle = 'bl';
+            return;
+        }
+        if (Math.abs(x - img.x) <= handleSize && 
+            Math.abs(y - img.y) <= handleSize) {
+            isResizing = true;
+            activeImage = img;
+            resizeHandle = 'tl';
+            return;
+        }
+        
+        // Then check for dragging
+        if (x >= img.x && x <= img.x + img.width &&
+            y >= img.y && y <= img.y + img.height) {
+            isDragging = true;
+            dragTarget = img;
+            dragOffset.x = x - img.x;
+            dragOffset.y = y - img.y;
+            collageImages.splice(i, 1);
+            collageImages.push(img);
+            redrawCollage();
+            return;
+        }
+    }
+}
+
+function drag(e) {
+    if (!isDragging && !isResizing) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    if (isResizing && activeImage) {
+        const ratio = activeImage.image.height / activeImage.image.width;
+        const minSize = 50;
+        
+        // Initialize newWidth and newHeight
+        let newWidth = activeImage.width;
+        let newHeight = activeImage.height;
+        
+        switch(resizeHandle) {
+            case 'br':
+                newWidth = Math.max(minSize, x - activeImage.x);
+                newHeight = newWidth * ratio;
+                break;
+            case 'bl':
+                newWidth = Math.max(minSize, (activeImage.x + activeImage.width) - x);
+                newHeight = newWidth * ratio;
+                activeImage.x = x;
+                break;
+            case 'tr':
+                newWidth = Math.max(minSize, x - activeImage.x);
+                newHeight = newWidth * ratio;
+                activeImage.y = activeImage.y + activeImage.height - newHeight;
+                break;
+            case 'tl':
+                newWidth = Math.max(minSize, (activeImage.x + activeImage.width) - x);
+                newHeight = newWidth * ratio;
+                activeImage.x = x;
+                activeImage.y = activeImage.y + activeImage.height - newHeight;
+                break;
+        }
+        
+        activeImage.width = newWidth;
+        activeImage.height = newHeight;
+        
+        redrawCollage();
+    } else if (isDragging && dragTarget) {
+        dragTarget.x = x - dragOffset.x;
+        dragTarget.y = y - dragOffset.y;
+        redrawCollage();
+    }
+}
+
+// Update redrawCollage function to make handles more visible
+function redrawCollage() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    collageImages.forEach(img => {
+        ctx.drawImage(img.image, img.x, img.y, img.width, img.height);
+    });
+    
+    if (isCollageMode) {
+        uiOverlay.style.display = 'block';
+        uiOverlay.width = canvas.width;
+        uiOverlay.height = canvas.height;
+        uiOverlay.style.position = 'absolute';
+        uiOverlay.style.left = canvas.offsetLeft + 'px';
+        uiOverlay.style.top = canvas.offsetTop + 'px';
+        uiOverlay.style.width = canvas.offsetWidth + 'px';
+        uiOverlay.style.height = canvas.offsetHeight + 'px';
+        
+        uiCtx.clearRect(0, 0, uiOverlay.width, uiOverlay.height);
+        
+        collageImages.forEach(img => {
+            uiCtx.fillStyle = '#00ff00';
+            uiCtx.strokeStyle = '#000000';
+            uiCtx.lineWidth = 2;
+            
+            const corners = [
+                {x: img.x + img.width, y: img.y + img.height},
+                {x: img.x + img.width, y: img.y},
+                {x: img.x, y: img.y + img.height},
+                {x: img.x, y: img.y}
+            ];
+            
+            corners.forEach(corner => {
+                uiCtx.beginPath();
+                uiCtx.arc(corner.x, corner.y, 8, 0, Math.PI * 2);
+                uiCtx.fill();
+                uiCtx.stroke();
+            });
+            
+            uiCtx.strokeStyle = '#00ff00';
+            uiCtx.strokeRect(img.x, img.y, img.width, img.height);
+        });
+    } else {
+        uiOverlay.style.display = 'none';
+    }
+}
+
+// Glitch generation
+function applyGlitchEffects() {
+    if (!protectionMask) {
+        initProtectionMask();
+    }
+    
+    const intensity = document.getElementById('intensitySlider').value / 100;
+    const pixelShift = document.getElementById('pixelShiftSlider').value / 100;
+    const colorShift = document.getElementById('colorShiftSlider').value / 100;
+    const noise = document.getElementById('noiseSlider').value / 100;
+    const scanlineFreq = document.getElementById('scanlineSlider').value / 100;
+    const waveDistortion = document.getElementById('waveSlider').value / 100;
+    const compression = document.getElementById('compressionSlider').value / 100;
+    const rgbSplit = document.getElementById('rgbSplitSlider').value / 100;
+    const jpegFry = document.getElementById('jpegFrySlider').value / 100;
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    const checkProtection = (idx) => {
+        return protectionMask && protectionMask[idx] ? true : false;
+    };
+
+    if (waveDistortion > 0) {
+        const tempData = new Uint8ClampedArray(data);
+        for (let y = 0; y < canvas.height; y++) {
+            const wave = Math.sin(y * 0.1) * waveDistortion * 20;
+            for (let x = 0; x < canvas.width; x++) {
+                const idx = (y * canvas.width + x);
+                if (checkProtection(idx)) continue;
+                
+                const sourceX = Math.floor(x + wave);
+                if (sourceX >= 0 && sourceX < canvas.width) {
+                    const targetI = (y * canvas.width + x) * 4;
+                    const sourceI = (y * canvas.width + sourceX) * 4;
+                    for (let c = 0; c < 4; c++) {
+                        data[targetI + c] = tempData[sourceI + c];
+                    }
+                }
+            }
+        }
+    }
+    
+    if (pixelShift > 0) {
+        const tempData = new Uint8ClampedArray(data);
+        for (let y = 0; y < canvas.height; y++) {
+            if (Math.random() < pixelShift * 0.3) {
+                const shiftAmount = Math.floor(Math.random() * 40 * pixelShift);
+                for (let x = 0; x < canvas.width; x++) {
+                    const idx = (y * canvas.width + x);
+                    if (checkProtection(idx)) continue;
+                    
+                    const sourceI = (y * canvas.width + x) * 4;
+                    const targetI = (y * canvas.width + ((x + shiftAmount) % canvas.width)) * 4;
+                    for (let c = 0; c < 4; c++) {
+                        data[targetI + c] = tempData[sourceI + c];
+                    }
+                }
+            }
+        }
+    }
+
+    if (colorShift > 0) {
+        const tempData = new Uint8ClampedArray(data);
+        const shiftAmount = Math.floor(colorShift * 15);
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const idx = i / 4;
+            if (checkProtection(idx)) continue;
+            
+            if (i + shiftAmount * 4 < data.length) {
+                data[i] = tempData[i + shiftAmount * 4];
+            }
+            if (i - shiftAmount * 4 >= 0) {
+                data[i + 2] = tempData[i - shiftAmount * 4 + 2];
+            }
+        }
+    }
+
+    for (let y = 0; y < canvas.height; y++) {
+        if (Math.random() < scanlineFreq * 0.4) {
+            const shift = Math.random() < 0.5 ? 1 : -1;
+            for (let x = 0; x < canvas.width; x++) {
+                const idx = (y * canvas.width + x);
+                if (checkProtection(idx)) continue;
+                
+                const i = (y * canvas.width + x) * 4;
+                const offset = Math.floor(Math.random() * 50 * scanlineFreq) * 4 * shift;
+                for (let j = 0; j < 4; j++) {
+                    const targetIndex = i + offset + j;
+                    if (targetIndex >= 0 && targetIndex < data.length) {
+                        data[i + j] = data[targetIndex];
+                    }
+                }
+            }
+        }
+    }
+
+    if (rgbSplit > 0) {
+        const tempData = new Uint8ClampedArray(data);
+        const offset = Math.floor(rgbSplit * 30);
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const idx = i / 4;
+            if (checkProtection(idx)) continue;
+            
+            const redOffset = Math.floor(Math.sin(i * 0.01) * offset) * 4;
+            data[i] = tempData[Math.max(0, Math.min(data.length - 4, i + redOffset))];
+            
+            const blueOffset = Math.floor(Math.cos(i * 0.01) * offset) * 4;
+            data[i + 2] = tempData[Math.max(0, Math.min(data.length - 4, i + blueOffset)) + 2];
+        }
+    }
+
+    if (compression > 0) {
+        const blockSize = Math.floor(compression * 15) + 1;
+        for (let y = 0; y < canvas.height; y += blockSize) {
+            for (let x = 0; x < canvas.width; x += blockSize) {
+                const idx = (y * canvas.width + x);
+                if (checkProtection(idx)) continue;
+                
+                if (Math.random() < compression * 0.5) {
+                    const sourceI = (y * canvas.width + x) * 4;
+                    const blockValues = [
+                        data[sourceI],
+                        data[sourceI + 1],
+                        data[sourceI + 2]
+                    ];
+                    
+                    for (let by = 0; by < blockSize && y + by < canvas.height; by++) {
+                        for (let bx = 0; bx < blockSize && x + bx < canvas.width; bx++) {
+                            const i = ((y + by) * canvas.width + (x + bx)) * 4;
+                            data[i] = blockValues[0];
+                            data[i + 1] = blockValues[1];
+                            data[i + 2] = blockValues[2];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for (let i = 0; i < data.length; i += 4) {
+        const idx = i / 4;
+        if (checkProtection(idx)) continue;
+        
+        if (Math.random() < noise) {
+            data[i] = Math.min(255, data[i] + (Math.random() - 0.5) * 100 * intensity);
+            data[i+1] = Math.min(255, data[i+1] + (Math.random() - 0.5) * 100 * intensity);
+            data[i+2] = Math.min(255, data[i+2] + (Math.random() - 0.5) * 100 * intensity);
+        }
+    }
+    
+    if (jpegFry > 0) {
+        const iterations = Math.floor(jpegFry * 10);
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Initial copy
+        tempCtx.putImageData(imageData, 0, 0);
+        
+        for (let i = 0; i < iterations; i++) {
+            const quality = 0.1 + (1 - jpegFry) * 0.2; 
+            const jpegData = tempCanvas.toDataURL('image/jpeg', quality);
+            
+            const img = new Image();
+            img.onload = () => {
+                tempCtx.clearRect(0, 0, canvas.width, canvas.height);
+                tempCtx.drawImage(img, 0, 0);
+                
+                // On final iteration, copy back to main canvas
+                if (i === iterations - 1) {
+                    const recompressedData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+                    for (let p = 0; p < data.length; p += 4) {
+                        const idx = p / 4;
+                        if (!checkProtection(idx)) {
+                            data[p] = recompressedData.data[p];
+                            data[p + 1] = recompressedData.data[p + 1];
+                            data[p + 2] = recompressedData.data[p + 2];
+                        }
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                }
+            };
+            img.src = jpegData;
+        }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+}
+
+// Download functionality
+downloadBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'glitch-art.png';
+    link.href = canvas.toDataURL();
+    link.click();
+});
+
+// Add mode switching handler
+switchModeBtn.addEventListener('click', () => {
+    isCollageMode = !isCollageMode;
+    switchModeBtn.textContent = isCollageMode ? "Switch to Single Mode" : "Switch to Collage Mode";
+    
+    const protectionToggle = document.getElementById('protectionBrushToggle');
+    const brushSizeSlider = document.getElementById('brushSizeSlider');
+    const eraserToggle = document.getElementById('eraserToggle');
+    const protectionContainer = protectionToggle.closest('.mb-6');
+    
+    protectionContainer.style.display = isCollageMode ? 'none' : 'block';
+    protectionToggle.checked = false;
+    protectionToggle.disabled = isCollageMode;
+    brushSizeSlider.disabled = isCollageMode;
+    eraserToggle.checked = false;
+    eraserToggle.disabled = isCollageMode;
+
+    if (!isCollageMode) {
+        // Switch to single mode
+        collageImages = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (originalImage) {
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+            ctx.drawImage(originalImage, 0, 0);
+            initProtectionMask();
+        }
+        uiOverlay.style.display = 'none';
+    } else {
+        // Switch to collage mode
+        if (originalImage) {
+            collageImages = [{
+                image: originalImage,
+                x: 0,
+                y: 0,
+                width: originalImage.width,
+                height: originalImage.height
+            }];
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawCollage();
+        }
+    }
+});
+
+removeEffectsBtn.addEventListener('click', () => {
+    if (!originalImage) return;
+    
+    saveState();
+    
+    if (isCollageMode) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        collageImages.forEach(img => {
+            ctx.drawImage(img.image, img.x, img.y, img.width, img.height);
+        });
+    } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(originalImage, 0, 0);
+        initProtectionMask();
+    }
+});
+
+document.getElementById('protectionBrushToggle').addEventListener('change', (e) => {
+    if (!isCollageMode) {
+        uiOverlay.style.display = e.target.checked ? 'block' : 'none';
+    }
+});
+</script>
+</body></html>
