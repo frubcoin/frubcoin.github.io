@@ -1,0 +1,210 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Card Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-4">
+    <h1 class="text-3xl font-bold mb-4">Pokémon Cards</h1>
+    <div class="mb-4 flex">
+        <input type="text" id="search-input" class="border p-2 rounded flex-grow" placeholder="Search for a card">
+        <button id="search-button" class="bg-blue-500 text-white p-2 rounded ml-2">Search</button>
+    </div>
+    <div id="message" class="text-red-500 mt-2"></div>
+    <table id="cards-table" class="w-full border-collapse bg-white shadow-md rounded-lg">
+        <thead class="bg-gray-200">
+            <tr>
+                <th class="p-2 text-left">Name</th>
+                <th class="p-2 text-left">Set</th>
+                <th class="p-2 text-left">Price</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Populated dynamically -->
+        </tbody>
+    </table>
+
+    <div id="card-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative">
+            <span class="close-button text-2xl font-bold cursor-pointer absolute top-2 right-2">×</span>
+            <h2 id="card-name" class="text-2xl font-bold mb-4"></h2>
+            <img id="card-image" class="w-full h-auto mb-4 rounded" src="" alt="Card Image">
+            <p class="mb-2"><strong>HP:</strong> <span id="card-hp"></span></p>
+            <p class="mb-2"><strong>Types:</strong> <span id="card-types"></span></p>
+            <p class="mb-2"><strong>Attacks:</strong></p>
+            <ul id="card-attacks" class="list-disc pl-5 mb-4"></ul>
+            <p class="mb-2"><strong>Weaknesses:</strong> <span id="card-weaknesses"></span></p>
+            <p class="mb-2"><strong>Retreat Cost:</strong> <span id="card-retreat"></span></p>
+            <p class="mb-2"><strong>Set:</strong> <span id="card-set"></span></p>
+            <p class="mb-2"><strong>Rarity:</strong> <span id="card-rarity"></span></p>
+            <p class="mb-2"><strong>Artist:</strong> <span id="card-artist"></span></p>
+            <p class="mb-2"><strong>Price:</strong> <span id="card-price"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            if (searchTerm) {
+                document.getElementById('message').textContent = '';
+                fetchCards(searchTerm);
+            } else {
+                document.getElementById('message').textContent = 'Please enter a search term.';
+            }
+        });
+
+        function fetchCards(searchTerm) {
+            const apiUrl = `https://api.pokemontcg.io/v2/cards?q=name:${searchTerm}`;
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.data) {
+                        if (data.data.length === 0) {
+                            document.getElementById('message').textContent = 'No cards found.';
+                        } else {
+                            populateTable(data.data);
+                        }
+                    } else {
+                        document.getElementById('message').textContent = 'Error fetching cards.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching cards:', error);
+                    document.getElementById('message').textContent = 'Error fetching cards. Please try again.';
+                });
+        }
+
+        function populateTable(cards) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = ''; // Clear existing rows
+            cards.forEach(card => {
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-gray-100', 'cursor-pointer');
+                row.setAttribute('data-id', card.id);
+                row.innerHTML = `
+                    <td class="p-2">${card.name}</td>
+                    <td class="p-2">${card.set.name}</td>
+                    <td class="p-2">${card.tcgplayer && card.tcgplayer.prices ? `$${Object.values(card.tcgplayer.prices)[0].market}` : 'N/A'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('table-body').addEventListener('click', (event) => {
+            const row = event.target.closest('tr');
+            if (row) {
+                const id = row.getAttribute('data-id');
+                if (id) {
+                    fetchCardDetails(id);
+                }
+            }
+        });
+
+        function fetchCardDetails(id) {
+            fetch(`https://api.pokemontcg.io/v2/cards/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.data) {
+                        displayCardDetails(data.data);
+                    } else {
+                        console.error('No data found for card');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching card details:', error);
+                });
+        }
+
+        function displayCardDetails(card) {
+            document.getElementById('card-name').textContent = card.name;
+            document.getElementById('card-image').src = card.images.large;
+            document.getElementById('card-hp').textContent = card.hp || 'N/A';
+            document.getElementById('card-types').textContent = card.types ? card.types.join(', ') : 'N/A';
+
+            const attacksList = document.getElementById('card-attacks');
+            attacksList.innerHTML = '';
+            if (card.attacks && card.attacks.length > 0) {
+                card.attacks.forEach(attack => {
+                    const li = document.createElement('li');
+                    li.textContent = `${attack.name} (Cost: ${attack.cost.join(', ')}) - ${attack.damage || '0'} damage - ${attack.text}`;
+                    attacksList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No attacks';
+                attacksList.appendChild(li);
+            }
+
+            const weaknessesSpan = document.getElementById('card-weaknesses');
+            weaknessesSpan.textContent = card.weaknesses ? card.weaknesses.map(w => `${w.type} ${w.value}`).join(', ') : 'None';
+
+            document.getElementById('card-retreat').textContent = card.convertedRetreatCost || '0';
+            document.getElementById('card-set').textContent = card.set.name;
+            document.getElementById('card-rarity').textContent = card.rarity || 'N/A';
+            document.getElementById('card-artist').textContent = card.artist || 'N/A';
+
+            const priceSpan = document.getElementById('card-price');
+            if (card.tcgplayer && card.tcgplayer.prices) {
+                const priceType = Object.keys(card.tcgplayer.prices)[0];
+                const marketPrice = card.tcgplayer.prices[priceType].market;
+                priceSpan.textContent = marketPrice ? `$${marketPrice}` : 'N/A';
+            } else {
+                priceSpan.textContent = 'N/A';
+            }
+
+            document.getElementById('card-modal').classList.remove('hidden');
+        }
+
+        document.querySelector('.close-button').addEventListener('click', () => {
+            document.getElementById('card-modal').classList.add('hidden');
+        });
+
+        document.getElementById('card-modal').addEventListener('click', (event) => {
+            if (event.target === document.getElementById('card-modal')) {
+                document.getElementById('card-modal').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
