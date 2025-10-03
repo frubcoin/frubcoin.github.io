@@ -5,7 +5,7 @@
     <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <meta charset="utf-8">
-    <meta content="width=device-width,initial-scale=1" name=viewport>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" name=viewport>
     <title>frub</title>
     <style>
         body,html{background:#000!important;visibility:hidden}
@@ -20,6 +20,11 @@
     <link href=https://fonts.gstatic.com rel=preconnect crossorigin>
     <style>
         @import url(https://fonts.googleapis.com/css2?family=Encode+Sans+Expanded:wght@100;200;300;400;500;600;700;800;900&display=swap);
+    </style>
+    <style>
+      /* Prevent iOS Safari from zooming inputs on focus */
+      html { -webkit-text-size-adjust: 100%; }
+      input, select, textarea, button { font-size: 16px; }
     </style>
     <style>
 
@@ -274,7 +279,6 @@
                     /* Hide crypto prices button on mobile */
                     @media (max-width: 768px) {
                       #show-prices-btn {
-                        display:  !important;
                       }
                     }
                     #prices-expand-section .price-container:hover {
