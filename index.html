@@ -274,7 +274,7 @@
                     /* Hide crypto prices button on mobile */
                     @media (max-width: 768px) {
                       #show-prices-btn {
-                        
+                        display:  !important;
                       }
                     }
                     #prices-expand-section .price-container:hover {
@@ -455,15 +455,11 @@
                   // Load initial preset
                   loadNextPreset();
         
-                  // Determine initial volume by device
-                  const isMobileDevice = (window.innerWidth <= 768) || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-                  const initialVolume = isMobileDevice ? 1.0 : 0.1;
-
                   // Create Howler audio instance
                   const sound = new Howl({
                     src: ['Let U Go.mp3?v=1'],
                     loop: true,
-                    volume: initialVolume,
+                    volume: 0.1,
                     html5: true // Enable HTML5 mode for Web Audio API compatibility
                   });
         
@@ -471,23 +467,13 @@
                   const analyser = audioContext.createAnalyser();
                   analyser.fftSize = 512;
                   
-                  // Create media element source lazily to satisfy mobile gesture policies
-                  let audioSource = null;
-                  function ensureAudioConnected() {
-                    try {
-                      if (!audioSource && sound._sounds && sound._sounds[0] && sound._sounds[0]._node) {
-                        const audioNode = sound._sounds[0]._node;
-                        audioSource = audioContext.createMediaElementSource(audioNode);
-                        audioSource.connect(analyser);
-                        analyser.connect(audioContext.destination);
-                        visualizer.connectAudio(analyser);
-                      }
-                    } catch (e) {
-                      // Ignore; will retry on next gesture if needed
-                    }
-                  }
+                  // Get the audio node from Howler when it's ready
                   sound.once('load', function() {
-                    ensureAudioConnected();
+                    const audioNode = sound._sounds[0]._node;
+                    const audioSource = audioContext.createMediaElementSource(audioNode);
+                    audioSource.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                    visualizer.connectAudio(analyser);
                   });
         
                   // Start the visualizer rendering
@@ -524,15 +510,11 @@
         
                   // Update mute button click handler
                   muteBtn.onclick = function() {
-                    // On first interaction on mobile, resume context and start main audio
-                    if (audioContext.state === 'suspended') {
-                      audioContext.resume();
-                    }
                     if (!sound.playing()) {
-                      sound.play();
-                      ensureAudioConnected();
-                    } else {
-                      ensureAudioConnected();
+                      // Resume audio context if it was suspended
+                      if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                      }
                     }
                     
                     const isVisible = volumeSliderContainer.classList.contains('visible');
@@ -846,17 +828,6 @@
           color: var(--text-color);
           font-family: inherit;
           letter-spacing: 0.11rem;
-          font-size: 16px; /* Prevent iOS zoom on focus */
-        }
-
-        /* Prevent iOS Safari auto-zoom on inputs when focusing (mobile only) */
-        @media (max-width: 768px) {
-          input,
-          textarea,
-          select,
-          button {
-            font-size: 16px;
-          }
         }
         
         #formStatus {
@@ -1306,40 +1277,39 @@
           const volumeSliderContainer = document.createElement('div');
           volumeSliderContainer.className = 'volume-slider-container';
           
-          // Determine device type for defaults
-          const isMobileDevice2 = (window.innerWidth <= 768) || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
           // Create volume slider
           const volumeSlider = document.createElement('input');
           volumeSlider.type = 'range';
           volumeSlider.min = '0';
           volumeSlider.max = '100';
-          volumeSlider.value = isMobileDevice2 ? '100' : '10';
+          volumeSlider.value = '10';
           volumeSlider.className = 'volume-slider';
           
           volumeSliderContainer.appendChild(volumeSlider);
           document.body.appendChild(volumeSliderContainer);
         
-          // Reuse the main Howler instance instead of a second one
-          const sound2 = sound;
+          // Create Howler audio instance for mute button
+          const sound2 = new Howl({
+            src: ['Let U Go.mp3?v=1'],
+            loop: true,
+            volume: 0.1
+          });
           
           muteBtn.innerHTML = volumeOff;
           muteBtn.onclick = function() {
-            // Ensure audio context is resumed and volume reflects slider
-            if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
-              audioContext.resume();
-            }
             if (!sound2.playing()) {
               sound2.play();
               this.innerHTML = volumeOn;
               volumeSliderContainer.classList.add('visible');
               nowPlaying.classList.add('visible');
-              sound2.volume(Number(volumeSlider.value) / 100);
             } else {
               sound2.pause();
               this.innerHTML = volumeOff;
               volumeSliderContainer.classList.remove('visible');
               nowPlaying.classList.remove('visible');
+              // Reset volume slider to 10% when hiding
+              volumeSlider.value = 10;
+              sound2.volume(0.1);
             }
           };
         
