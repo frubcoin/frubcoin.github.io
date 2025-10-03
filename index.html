@@ -455,11 +455,15 @@
                   // Load initial preset
                   loadNextPreset();
         
+                  // Determine initial volume by device
+                  const isMobileDevice = (window.innerWidth <= 768) || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                  const initialVolume = isMobileDevice ? 1.0 : 0.1;
+
                   // Create Howler audio instance
                   const sound = new Howl({
                     src: ['Let U Go.mp3?v=1'],
                     loop: true,
-                    volume: 0.1,
+                    volume: initialVolume,
                     html5: true // Enable HTML5 mode for Web Audio API compatibility
                   });
         
@@ -1288,12 +1292,15 @@
           const volumeSliderContainer = document.createElement('div');
           volumeSliderContainer.className = 'volume-slider-container';
           
+          // Determine device type for defaults
+          const isMobileDevice2 = (window.innerWidth <= 768) || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
           // Create volume slider
           const volumeSlider = document.createElement('input');
           volumeSlider.type = 'range';
           volumeSlider.min = '0';
           volumeSlider.max = '100';
-          volumeSlider.value = '10';
+          volumeSlider.value = isMobileDevice2 ? '100' : '10';
           volumeSlider.className = 'volume-slider';
           
           volumeSliderContainer.appendChild(volumeSlider);
@@ -1303,7 +1310,7 @@
           const sound2 = new Howl({
             src: ['Let U Go.mp3?v=1'],
             loop: true,
-            volume: 0.1
+            volume: isMobileDevice2 ? 1.0 : 0.1
           });
           
           muteBtn.innerHTML = volumeOff;
