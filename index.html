@@ -471,13 +471,23 @@
                   const analyser = audioContext.createAnalyser();
                   analyser.fftSize = 512;
                   
-                  // Get the audio node from Howler when it's ready
+                  // Create media element source lazily to satisfy mobile gesture policies
+                  let audioSource = null;
+                  function ensureAudioConnected() {
+                    try {
+                      if (!audioSource && sound._sounds && sound._sounds[0] && sound._sounds[0]._node) {
+                        const audioNode = sound._sounds[0]._node;
+                        audioSource = audioContext.createMediaElementSource(audioNode);
+                        audioSource.connect(analyser);
+                        analyser.connect(audioContext.destination);
+                        visualizer.connectAudio(analyser);
+                      }
+                    } catch (e) {
+                      // Ignore; will retry on next gesture if needed
+                    }
+                  }
                   sound.once('load', function() {
-                    const audioNode = sound._sounds[0]._node;
-                    const audioSource = audioContext.createMediaElementSource(audioNode);
-                    audioSource.connect(analyser);
-                    analyser.connect(audioContext.destination);
-                    visualizer.connectAudio(analyser);
+                    ensureAudioConnected();
                   });
         
                   // Start the visualizer rendering
@@ -514,11 +524,15 @@
         
                   // Update mute button click handler
                   muteBtn.onclick = function() {
+                    // On first interaction on mobile, resume context and start main audio
+                    if (audioContext.state === 'suspended') {
+                      audioContext.resume();
+                    }
                     if (!sound.playing()) {
-                      // Resume audio context if it was suspended
-                      if (audioContext.state === 'suspended') {
-                        audioContext.resume();
-                      }
+                      sound.play();
+                      ensureAudioConnected();
+                    } else {
+                      ensureAudioConnected();
                     }
                     
                     const isVisible = volumeSliderContainer.classList.contains('visible');
@@ -1306,28 +1320,26 @@
           volumeSliderContainer.appendChild(volumeSlider);
           document.body.appendChild(volumeSliderContainer);
         
-          // Create Howler audio instance for mute button
-          const sound2 = new Howl({
-            src: ['Let U Go.mp3?v=1'],
-            loop: true,
-            volume: isMobileDevice2 ? 1.0 : 0.1
-          });
+          // Reuse the main Howler instance instead of a second one
+          const sound2 = sound;
           
           muteBtn.innerHTML = volumeOff;
           muteBtn.onclick = function() {
+            // Ensure audio context is resumed and volume reflects slider
+            if (typeof audioContext !== 'undefined' && audioContext.state === 'suspended') {
+              audioContext.resume();
+            }
             if (!sound2.playing()) {
               sound2.play();
               this.innerHTML = volumeOn;
               volumeSliderContainer.classList.add('visible');
               nowPlaying.classList.add('visible');
+              sound2.volume(Number(volumeSlider.value) / 100);
             } else {
               sound2.pause();
               this.innerHTML = volumeOff;
               volumeSliderContainer.classList.remove('visible');
               nowPlaying.classList.remove('visible');
-              // Reset volume slider to 10% when hiding
-              volumeSlider.value = 10;
-              sound2.volume(0.1);
             }
           };
         
