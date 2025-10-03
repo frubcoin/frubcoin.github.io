@@ -274,7 +274,7 @@
                     /* Hide crypto prices button on mobile */
                     @media (max-width: 768px) {
                       #show-prices-btn {
-                        display:  !important;
+                        display: none !important;
                       }
                     }
                     #prices-expand-section .price-container:hover {
@@ -828,6 +828,17 @@
           color: var(--text-color);
           font-family: inherit;
           letter-spacing: 0.11rem;
+          font-size: 16px; /* Prevent iOS zoom on focus */
+        }
+
+        /* Prevent iOS Safari auto-zoom on inputs when focusing (mobile only) */
+        @media (max-width: 768px) {
+          input,
+          textarea,
+          select,
+          button {
+            font-size: 16px;
+          }
         }
         
         #formStatus {
