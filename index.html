@@ -276,11 +276,7 @@
                 <style>
 
 
-                    /* Hide crypto prices button on mobile */
-                    @media (max-width: 768px) {
-                      #show-prices-btn {
-                      }
-                    }
+                    /* (removed empty mobile rule for #show-prices-btn) */
                     #prices-expand-section .price-container:hover {
                   background-color: var(--hover-color);
                   opacity: 1;
@@ -833,6 +829,18 @@
           font-family: inherit;
           letter-spacing: 0.11rem;
         }
+        
+        /* Remove focus outlines and tap highlight on inputs/buttons */
+        #contactForm input:focus,
+        #contactForm textarea:focus,
+        #contactForm select:focus,
+        #contactForm button:focus,
+        button:focus {
+          outline: none;
+          box-shadow: none;
+        }
+        
+        input, textarea, select, button { -webkit-tap-highlight-color: transparent; }
         
         #formStatus {
           text-align: center;
