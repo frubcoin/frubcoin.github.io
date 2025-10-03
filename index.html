@@ -455,12 +455,26 @@
                   // Load initial preset
                   loadNextPreset();
         
-                  // Prepare analyser for later connection to the music instance
+                  // Create Howler audio instance
+                  const sound = new Howl({
+                    src: ['Let U Go.mp3?v=1'],
+                    loop: true,
+                    volume: 0.1,
+                    html5: true // Enable HTML5 mode for Web Audio API compatibility
+                  });
+        
+                  // Connect Howler to visualizer
                   const analyser = audioContext.createAnalyser();
                   analyser.fftSize = 512;
-
-                  // Expose for later hookup from the mute button logic
-                  window.__frubAudio = { audioContext, analyser, visualizer };
+                  
+                  // Get the audio node from Howler when it's ready
+                  sound.once('load', function() {
+                    const audioNode = sound._sounds[0]._node;
+                    const audioSource = audioContext.createMediaElementSource(audioNode);
+                    audioSource.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                    visualizer.connectAudio(analyser);
+                  });
         
                   // Start the visualizer rendering
                   visualizer.setRendererSize(window.innerWidth, window.innerHeight);
@@ -494,7 +508,66 @@
                     });
                   }, 500); // Adjust the delay to match when the visualizer is ready
         
-                  // Mute button logic is initialized later after the elements exist
+                  // Update mute button click handler
+                  muteBtn.onclick = function() {
+                    if (!sound.playing()) {
+                      // Resume audio context if it was suspended
+                      if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                      }
+                    }
+                    
+                    const isVisible = volumeSliderContainer.classList.contains('visible');
+                    
+                    if (!isVisible) {
+                      volumeSliderContainer.classList.add('visible');
+                      // Close if clicking outside
+                      const closeHandler = function(e) {
+                        if (!volumeSliderContainer.contains(e.target) && e.target !== muteBtn) {
+                          volumeSliderContainer.classList.remove('visible');
+                          document.removeEventListener('click', closeHandler);
+                        }
+                      };
+                      
+                      // Use a small timeout to prevent immediate close
+                      setTimeout(() => {
+                        document.addEventListener('click', closeHandler);
+                      }, 10);
+                      
+                      // Prevent closing when clicking on the slider
+                      volumeSliderContainer.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                      });
+                    } else {
+                      volumeSliderContainer.classList.remove('visible');
+                      document.removeEventListener('click', closeVolumeSlider);
+                    }
+                  };
+                  
+                  // Handle volume change
+                  volumeSlider.addEventListener('input', function() {
+                    const volume = this.value / 100;
+                    sound.volume(volume);
+                    
+                    // Update mute state if needed
+                    if (volume > 0 && sound.mute()) {
+                      sound.mute(false);
+                      muteBtn.innerHTML = volumeOn;
+                    } else if (volume === 0 && !sound.mute()) {
+                      sound.mute(true);
+                      muteBtn.innerHTML = volumeOff;
+                    }
+                    
+                    // Save volume to localStorage
+                    localStorage.setItem('volume', volume);
+                  });
+        
+                  // Add audio ended handler
+                  sound.on('end', function() {
+                    muteBtn.innerHTML = volumeOff;
+                    volumeSliderContainer.classList.remove('visible');
+                    nowPlaying.classList.remove('visible');
+                  });
                 };
         
                 // Film grain effect
@@ -1227,63 +1300,37 @@
           volumeSliderContainer.appendChild(volumeSlider);
           document.body.appendChild(volumeSliderContainer);
         
-          // Single shared Howler instance for music (html5 true for mobile reliability)
-          const music = new Howl({
+          // Create Howler audio instance for mute button
+          const sound2 = new Howl({
             src: ['Let U Go.mp3?v=1'],
             loop: true,
-            volume: 0.1,
-            html5: true
+            volume: 0.1
           });
           
           muteBtn.innerHTML = volumeOff;
           muteBtn.onclick = function() {
-            // On iOS/mobile, resume contexts on user gesture
-            if (window.Howler && Howler.ctx && Howler.ctx.state === 'suspended') {
-              Howler.ctx.resume();
-            }
-            if (window.__frubAudio && window.__frubAudio.audioContext && window.__frubAudio.audioContext.state === 'suspended') {
-              window.__frubAudio.audioContext.resume();
-            }
-
-            if (!music.playing()) {
-              music.play();
-
-              // Hook up visualizer to this music element the first time
-              if (window.__frubAudio && !window.__frubAudio._connected) {
-                const { audioContext, analyser, visualizer } = window.__frubAudio;
-                const mediaEl = music._sounds[0]?._node;
-                if (mediaEl) {
-                  // Create source only once
-                  window.__frubAudio._connected = true;
-                  try {
-                    const src = audioContext.createMediaElementSource(mediaEl);
-                    src.connect(analyser);
-                    analyser.connect(audioContext.destination);
-                    visualizer.connectAudio(analyser);
-                  } catch (e) {
-                    // In case of "a MediaElementSourceNode with this HTMLMediaElement already exists"
-                  }
-                }
-              }
-
+            if (!sound2.playing()) {
+              sound2.play();
               this.innerHTML = volumeOn;
               volumeSliderContainer.classList.add('visible');
               nowPlaying.classList.add('visible');
             } else {
-              music.pause();
+              sound2.pause();
               this.innerHTML = volumeOff;
               volumeSliderContainer.classList.remove('visible');
               nowPlaying.classList.remove('visible');
               // Reset volume slider to 10% when hiding
               volumeSlider.value = 10;
-              music.volume(0.1);
+              sound2.volume(0.1);
             }
           };
         
           // Volume slider event listener
           volumeSlider.addEventListener('input', function() {
             const volume = this.value / 100;
-            music.volume(volume);
+            sound2.volume(volume);
+            
+            // Update mute button icon based on volume
             if (volume === 0) {
               muteBtn.innerHTML = volumeOff;
             } else {
@@ -1305,30 +1352,11 @@
           document.body.appendChild(nowPlaying);
         
           // Add audio ended handler
-          music.on('end', function() {
+          sound2.on('end', function() {
             muteBtn.innerHTML = volumeOff;
             volumeSliderContainer.classList.remove('visible');
             nowPlaying.classList.remove('visible');
           });
-
-          // Autoplay hint: start silent on first interaction
-          const primePlayback = () => {
-            if (!music.playing()) {
-              if (window.Howler && Howler.ctx && Howler.ctx.state === 'suspended') {
-                Howler.ctx.resume();
-              }
-              if (window.__frubAudio && window.__frubAudio.audioContext && window.__frubAudio.audioContext.state === 'suspended') {
-                window.__frubAudio.audioContext.resume();
-              }
-              music.volume(Math.max(0.0001, music.volume()));
-              music.play();
-              music.pause();
-            }
-            document.removeEventListener('touchstart', primePlayback);
-            document.removeEventListener('click', primePlayback);
-          };
-          document.addEventListener('touchstart', primePlayback, { once: true });
-          document.addEventListener('click', primePlayback, { once: true });
         });
         
         // Make embed window draggable
