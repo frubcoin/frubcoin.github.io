@@ -1304,11 +1304,15 @@
           const sound2 = new Howl({
             src: ['Let U Go.mp3?v=1'],
             loop: true,
-            volume: 0.1
+            volume: 0.1,
+            html5: true
           });
           
           muteBtn.innerHTML = volumeOff;
           muteBtn.onclick = function() {
+            if (Howler.ctx && Howler.ctx.state === 'suspended') {
+              Howler.ctx.resume();
+            }
             if (!sound2.playing()) {
               sound2.play();
               this.innerHTML = volumeOn;
@@ -1357,6 +1361,15 @@
             volumeSliderContainer.classList.remove('visible');
             nowPlaying.classList.remove('visible');
           });
+
+          // One-time interaction listeners to unlock audio on iOS/Safari
+          const unlockAudio = () => {
+            if (Howler.ctx && Howler.ctx.state === 'suspended') {
+              Howler.ctx.resume();
+            }
+          };
+          document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+          document.addEventListener('pointerdown', unlockAudio, { once: true });
         });
         
         // Make embed window draggable
