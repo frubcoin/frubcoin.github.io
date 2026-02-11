@@ -32,7 +32,7 @@
     .orb-2 { width: 300px; height: 300px; background: rgba(0, 229, 191, 0.05); bottom: -50px; left: -50px; animation: float 15s ease-in-out infinite reverse; }
     @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -30px) scale(1.1); } }
 
-    .app-container { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .app-container { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; padding-top: 40px; }
     .screen { display: none; flex: 1; animation: fadeIn 0.4s ease-out; }
     .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -77,18 +77,18 @@
     .wallet-btn:hover { background: var(--bg-elevated); border-color: var(--accent); transform: translateY(-2px); }
     
     /* Warning Banner */
-    .warning-banner { background: rgba(255, 71, 87, 0.1); border-bottom: 1px solid rgba(255, 71, 87, 0.3); color: var(--fg); padding: 1rem; text-align: center; font-size: 0.875rem; position: fixed; top: 0; left: 0; right: 0; z-index: 100; backdrop-filter: blur(10px); }
-    .warning-banner a { color: var(--accent); text-decoration: underline; }
+    .warning-banner { background: rgba(255, 71, 87, 0.1); border-bottom: 1px solid rgba(255, 71, 87, 0.3); color: var(--fg); padding: 0.75rem; text-align: center; font-size: 0.875rem; position: fixed; top: 0; left: 0; right: 0; z-index: 100; backdrop-filter: blur(10px); }
+    .warning-banner a { color: var(--accent); text-decoration: underline; font-weight: 600; }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   </style>
 </head>
 <body>
-  <!-- Environment Warning (Hidden by default) -->
+  <!-- Environment Warning -->
   <div id="env-warning" class="warning-banner" style="display: none;">
-    <strong>Restricted Environment Detected:</strong> Wallets cannot connect inside sandboxed iframes. 
-    Please <a href="#" onclick="window.open(window.location.href, '_blank')">open in a new tab</a> or run locally.
+    <strong>Sandbox Detected:</strong> Wallets cannot connect here. 
+    <a href="#" onclick="window.open(window.location.href, '_blank')">Open in New Tab</a> to use full features.
   </div>
 
   <div class="grid-bg"></div>
@@ -228,26 +228,15 @@
     // =====================
     // Environment Check
     // =====================
-    // Check if we are in a sandboxed iframe (where origin is null or different from top)
     function checkEnvironment() {
       try {
-        // If window.self !== window.top, we are in an iframe.
-        // If window.origin is "null", it's a sandboxed iframe (srcdoc).
         const isIframe = window.self !== window.top;
-        const isSandboxed = window.origin === 'null' || window.origin === 'file://'; // file:// also often restricted for wallets
-        
-        if (isIframe || isSandboxed) {
-          document.getElementById('env-warning').style.display = 'block';
-          // Inject some helpful text into the wallet screen if possible
-          const statusEl = document.getElementById('connection-status');
-          if(statusEl) statusEl.textContent = 'Wallets blocked by environment.';
-        }
+        const isSandboxed = window.origin === 'null' || window.origin === 'file://';
+        if (isIframe || isSandboxed) document.getElementById('env-warning').style.display = 'block';
       } catch (e) {
-        // Security error accessing window.top implies we are in a cross-origin iframe
         document.getElementById('env-warning').style.display = 'block';
       }
     }
-    // Run check immediately
     checkEnvironment();
 
     // =====================
@@ -263,10 +252,12 @@
       currentChannel: 'general'
     };
 
-    // Initialize Solana Connection
-    state.connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+    // FIX: Using a public RPC that allows browser access (Ankr).
+    // The default Solana Labs endpoint often blocks browser requests (403 Forbidden).
+    const RPC_URL = 'https://rpc.ankr.com/solana';
+    state.connection = new solanaWeb3.Connection(RPC_URL, 'confirmed');
 
-    // Token Configuration
+    // Token Configuration (Replace mints with real ones)
     const tokenRooms = [
       {
         id: 'general', name: 'General Chat', description: 'Open to all verified wallets',
@@ -318,26 +309,21 @@
     // =====================
     function getWalletProvider(type) {
       const standardSolana = window.solana;
-
       if (type === 'phantom') {
         if (window.phantom?.solana) return window.phantom.solana;
         if (standardSolana?.isPhantom) return standardSolana;
       }
-      
       if (type === 'backpack') {
         if (window.backpack?.solana) return window.backpack.solana;
         if (standardSolana?.isBackpack) return standardSolana;
       }
-
       if (type === 'solflare') {
         if (window.solflare) return window.solflare;
         if (standardSolana?.isSolflare) return standardSolana;
       }
-      
       if (type === 'generic') {
         if (standardSolana) return standardSolana;
       }
-      
       return null;
     }
 
@@ -346,7 +332,6 @@
       document.getElementById('connecting-state').classList.remove('hidden');
       
       try {
-        // Check environment again just in case
         if (window.origin === 'null') throw new Error("Running in sandbox. Please open in new tab.");
 
         const provider = getWalletProvider(type);
@@ -408,6 +393,8 @@
       try {
         log('Initializing secure connection...');
         log(`Wallet: ${state.publicKey.toBase58().slice(0, 8)}...`);
+        
+        log('Connecting to RPC Cluster...');
         
         log('Fetching token accounts...');
         
