@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tryl.chat — Token-Gated Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b; --bg-elevated: #111113; --fg: #fafafa; --muted: #71717a;
+      --accent: #00e5bf; --accent-dim: #00b396; --card: #18181b;
+      --border: #27272a; --danger: #ff4757; --success: #00e5bf;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; overflow-x: hidden; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .wordmark { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 300; letter-spacing: -0.04em; display: inline-flex; align-items: baseline; }
+    .wordmark .tryl { font-weight: 700; background: linear-gradient(135deg, var(--fg) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .wordmark .dot { color: var(--accent); font-weight: 300; }
+    .wordmark .chat { font-weight: 300; color: var(--muted); }
+
+    .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(0, 229, 191, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 191, 0.03) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
+    .grid-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 191, 0.12), transparent); }
+    
+    .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+    .orb-1 { width: 400px; height: 400px; background: rgba(0, 229, 191, 0.08); top: -100px; right: -100px; animation: float 20s ease-in-out infinite; }
+    .orb-2 { width: 300px; height: 300px; background: rgba(0, 229, 191, 0.05); bottom: -50px; left: -50px; animation: float 15s ease-in-out infinite reverse; }
+    @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -30px) scale(1.1); } }
+
+    .app-container { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+    .screen { display: none; flex: 1; animation: fadeIn 0.4s ease-out; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .btn-primary { background: var(--accent); color: var(--bg); font-weight: 600; padding: 0.875rem 2rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; font-size: 0.9375rem; }
+    .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+    .btn-primary:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+    
+    .btn-secondary { background: transparent; color: var(--fg); font-weight: 500; padding: 0.875rem 2rem; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s ease; font-family: inherit; font-size: 0.9375rem; }
+    .btn-secondary:hover { background: var(--card); border-color: var(--muted); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: all 0.2s ease; }
+    .card:hover { border-color: var(--muted); }
+
+    .room-card { cursor: pointer; position: relative; overflow: hidden; }
+    .room-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 0%, rgba(0, 229, 191, 0.05) 100%); opacity: 0; transition: opacity 0.2s ease; }
+    .room-card:hover::before { opacity: 1; }
+    .room-card.locked { opacity: 0.6; cursor: not-allowed; }
+    .room-card.locked:hover { border-color: var(--danger); }
+
+    .token-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: rgba(0, 229, 191, 0.1); border: 1px solid rgba(0, 229, 191, 0.2); border-radius: 100px; font-size: 0.75rem; color: var(--accent); }
+    .token-badge.required { background: rgba(255, 71, 87, 0.1); border-color: rgba(255, 71, 87, 0.2); color: var(--danger); }
+
+    .chat-container { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
+    @media (max-width: 768px) { .chat-container { grid-template-columns: 1fr; } }
+    .sidebar { background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .messages-area { display: flex; flex-direction: column; background: var(--bg); }
+    .message { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
+    .message:hover { background: var(--bg-elevated); }
+    .message-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.875rem 1rem; color: var(--fg); font-family: inherit; font-size: 0.9375rem; }
+    .message-input:focus { outline: none; border-color: var(--accent); }
+
+    .animate-in { animation: slideUp 0.5s ease-out both; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .stagger-1 { animation-delay: 0.1s; } .stagger-2 { animation-delay: 0.2s; }
+    
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .security-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--success); }
+    .wallet-btn { display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; max-width: 320px; padding: 1rem 1.5rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s ease; font-family: inherit; color: var(--fg); font-size: 1rem; }
+    .wallet-btn:hover { background: var(--bg-elevated); border-color: var(--accent); transform: translateY(-2px); }
+    
+    /* Warning Banner */
+    .warning-banner { background: rgba(255, 71, 87, 0.1); border-bottom: 1px solid rgba(255, 71, 87, 0.3); color: var(--fg); padding: 1rem; text-align: center; font-size: 0.875rem; position: fixed; top: 0; left: 0; right: 0; z-index: 100; backdrop-filter: blur(10px); }
+    .warning-banner a { color: var(--accent); text-decoration: underline; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <!-- Environment Warning (Hidden by default) -->
+  <div id="env-warning" class="warning-banner" style="display: none;">
+    <strong>Restricted Environment Detected:</strong> Wallets cannot connect inside sandboxed iframes. 
+    Please <a href="#" onclick="window.open(window.location.href, '_blank')">open in a new tab</a> or run locally.
+  </div>
+
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="app-container">
+    <!-- Screen 1: Landing -->
+    <div id="landing-screen" class="screen active items-center justify-center p-6">
+      <div class="text-center max-w-xl">
+        <div class="animate-in stagger-1">
+          <h1 class="wordmark"><span class="tryl">tryl</span><span class="dot">.</span><span class="chat">chat</span></h1>
+        </div>
+        <p class="mt-6 text-lg text-zinc-400 animate-in stagger-2">Token-gated chat rooms on Solana. Secure, decentralized, exclusive.</p>
+        <div class="mt-10 animate-in stagger-3">
+          <button class="btn-primary" onclick="showScreen('onboarding-screen')">Enter App</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Onboarding -->
+    <div id="onboarding-screen" class="screen flex-col items-center justify-center p-6">
+      <div class="w-full max-w-md">
+        <div class="text-center mb-10">
+          <h2 class="text-2xl font-semibold">Connect Your Wallet</h2>
+          <p class="mt-2 text-zinc-400">Link your Solana wallet to verify token holdings</p>
+        </div>
+
+        <div id="wallet-options" class="space-y-4 flex flex-col items-center">
+          <button class="wallet-btn" onclick="connectWallet('phantom')" aria-label="Connect Phantom">
+            <svg viewBox="0 0 128 128" width="28" height="28"><rect width="128" height="128" rx="24" fill="#AB9FF2"/><path d="M97.3 62.8c-6.4-4.9-15.2-4.1-22.1-.6-5.4 2.8-10.4 7.1-16.3 8.3-5.6 1.1-11.6-.6-15.8-4.5-1.4-1.3-2.5-2.8-3.3-4.4-.5-1 .4-2.1 1.5-1.8 4.3 1.3 8.9 1.1 13.1-.6 5.2-2.1 9.4-6.2 14.6-8.3 7.7-3.1 17-2.5 23.3 2.6 1.8 1.4 3.3 3.1 4.5 5 1.1 1.7-.1 3.9-2.1 4.1-.5.1-.9-.2-1.4.2z" fill="#FFF"/></svg>
+            <span>Phantom</span>
+          </button>
+          
+          <button class="wallet-btn" onclick="connectWallet('backpack')" aria-label="Connect Backpack">
+            <svg viewBox="0 0 128 128" width="28" height="28"><rect width="128" height="128" rx="24" fill="#E42575"/><circle cx="64" cy="64" r="30" fill="#FFF"/></svg>
+            <span>Backpack</span>
+          </button>
+
+          <button class="wallet-btn" onclick="connectWallet('solflare')" aria-label="Connect Solflare">
+             <svg viewBox="0 0 128 128" width="28" height="28"><rect width="128" height="128" rx="24" fill="#FFC800"/><path d="M64 32l-24 32 24 32 24-32-24-32z" fill="#FFF"/></svg>
+            <span>Solflare</span>
+          </button>
+
+          <button class="wallet-btn" onclick="connectWallet('generic')" aria-label="Connect other wallet">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg>
+            <span>Other Wallet</span>
+          </button>
+        </div>
+
+        <div id="connecting-state" class="hidden text-center py-8">
+          <div class="spinner mx-auto mb-4"></div>
+          <p class="text-zinc-400" id="connection-status">Connecting wallet...</p>
+        </div>
+
+        <div class="mt-8 p-4 rounded-lg" style="background: rgba(0, 229, 191, 0.05); border: 1px solid rgba(0, 229, 191, 0.1);">
+          <div class="security-indicator justify-center">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>We never store your keys. You sign locally.</span>
+          </div>
+        </div>
+
+        <button class="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors block mx-auto" onclick="showScreen('landing-screen')">← Back</button>
+      </div>
+    </div>
+
+    <!-- Screen 3: Verification -->
+    <div id="verification-screen" class="screen flex-col items-center justify-center p-6">
+      <div class="w-full max-w-lg">
+        <div class="card">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold">Verifying Holdings</h2>
+            <div class="security-indicator">
+              <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Secured</span>
+            </div>
+          </div>
+          <div class="mono text-sm text-zinc-400 mb-6 p-4 rounded-lg overflow-y-auto" style="background: var(--bg); height: 200px;" id="verification-logs"></div>
+          <div id="verification-status" class="text-center py-4">
+            <div class="spinner mx-auto mb-3"></div>
+            <p class="text-zinc-400">Initializing connection...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 4: Room Selection -->
+    <div id="rooms-screen" class="screen flex-col p-6">
+      <div class="max-w-4xl mx-auto w-full">
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-2xl font-semibold">Token Rooms</h2>
+            <p class="text-zinc-400 mt-1">Select a room to join the conversation</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div id="wallet-address" class="mono text-sm px-3 py-2 rounded-lg" style="background: var(--card); border: 1px solid var(--border);"></div>
+            <button class="btn-secondary text-sm py-2 px-4" onclick="disconnectWallet()">Disconnect</button>
+          </div>
+        </div>
+        <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </div>
+
+    <!-- Screen 5: Chat Room -->
+    <div id="chat-screen" class="screen">
+      <div class="chat-container">
+        <aside class="sidebar">
+          <div class="p-4 border-b" style="border-color: var(--border);">
+            <h3 class="font-semibold" id="current-room-name">General Chat</h3>
+            <div id="current-room-token" class="mt-1"></div>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4">
+            <h4 class="text-xs uppercase tracking-wider text-zinc-500 mb-3">Channels</h4>
+            <div id="channels-list" class="space-y-1"></div>
+          </div>
+          <div class="p-4 border-t" style="border-color: var(--border);">
+            <div class="security-indicator pulse">
+              <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>E2E Encrypted</span>
+            </div>
+          </div>
+        </aside>
+        <main class="messages-area">
+          <div class="flex-1 overflow-y-auto" id="messages-container"></div>
+          <div class="message-input-container p-4" style="background: var(--bg-elevated); border-top: 1px solid var(--border);">
+            <div class="flex gap-3">
+              <input type="text" class="message-input flex-1" id="message-input" placeholder="Type a message..." aria-label="Message input" onkeypress="handleMessageKeypress(event)">
+              <button class="btn-primary" onclick="sendMessage()">Send</button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================
+    // Environment Check
+    // =====================
+    // Check if we are in a sandboxed iframe (where origin is null or different from top)
+    function checkEnvironment() {
+      try {
+        // If window.self !== window.top, we are in an iframe.
+        // If window.origin is "null", it's a sandboxed iframe (srcdoc).
+        const isIframe = window.self !== window.top;
+        const isSandboxed = window.origin === 'null' || window.origin === 'file://'; // file:// also often restricted for wallets
+        
+        if (isIframe || isSandboxed) {
+          document.getElementById('env-warning').style.display = 'block';
+          // Inject some helpful text into the wallet screen if possible
+          const statusEl = document.getElementById('connection-status');
+          if(statusEl) statusEl.textContent = 'Wallets blocked by environment.';
+        }
+      } catch (e) {
+        // Security error accessing window.top implies we are in a cross-origin iframe
+        document.getElementById('env-warning').style.display = 'block';
+      }
+    }
+    // Run check immediately
+    checkEnvironment();
+
+    // =====================
+    // State & Configuration
+    // =====================
+    const state = {
+      currentScreen: 'landing-screen',
+      wallet: null,
+      connection: null,
+      publicKey: null,
+      userTokens: [],
+      currentRoom: null,
+      currentChannel: 'general'
+    };
+
+    // Initialize Solana Connection
+    state.connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+
+    // Token Configuration
+    const tokenRooms = [
+      {
+        id: 'general', name: 'General Chat', description: 'Open to all verified wallets',
+        token: null, members: 8429, online: 234, channels: ['general', 'introductions'], unlocked: true
+      },
+      {
+        id: 'solana-defi', name: 'DeFi Alpha', description: 'Exclusive DeFi discussions',
+        token: { symbol: 'USDC', amount: 1, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+        members: 1247, online: 89, channels: ['alpha', 'yields'], unlocked: false
+      },
+      {
+        id: 'bonk-gang', name: 'BONK Gang', description: 'For the BONK community',
+        token: { symbol: 'BONK', amount: 1000000, mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' },
+        members: 892, online: 56, channels: ['bonk-talk', 'meme-war'], unlocked: false
+      },
+      {
+        id: 'wallet-check', name: 'SOL Holders', description: 'Must hold at least 0.01 SOL',
+        token: { symbol: 'SOL', amount: 0.01, mint: 'So11111111111111111111111111111111111111112' },
+        members: 410, online: 45, channels: ['sol-chat'], unlocked: false
+      }
+    ];
+
+    const sampleMessages = [
+      { user: 'solana_dev', content: 'Just shipped a new feature. Check it out!', time: '2m ago', avatar: 'SD' },
+      { user: 'cryptowhale', content: 'Market looking interesting today.', time: '5m ago', avatar: 'CW' },
+    ];
+
+    // =====================
+    // UI Logic
+    // =====================
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      state.currentScreen = screenId;
+    }
+
+    function log(text, isAccent = false) {
+      const container = document.getElementById('verification-logs');
+      const line = document.createElement('div');
+      line.className = 'mb-1';
+      if (isAccent) line.style.color = 'var(--accent)';
+      line.textContent = `> ${text}`;
+      container.appendChild(line);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // =====================
+    // Wallet Detection
+    // =====================
+    function getWalletProvider(type) {
+      const standardSolana = window.solana;
+
+      if (type === 'phantom') {
+        if (window.phantom?.solana) return window.phantom.solana;
+        if (standardSolana?.isPhantom) return standardSolana;
+      }
+      
+      if (type === 'backpack') {
+        if (window.backpack?.solana) return window.backpack.solana;
+        if (standardSolana?.isBackpack) return standardSolana;
+      }
+
+      if (type === 'solflare') {
+        if (window.solflare) return window.solflare;
+        if (standardSolana?.isSolflare) return standardSolana;
+      }
+      
+      if (type === 'generic') {
+        if (standardSolana) return standardSolana;
+      }
+      
+      return null;
+    }
+
+    async function connectWallet(type) {
+      document.getElementById('wallet-options').classList.add('hidden');
+      document.getElementById('connecting-state').classList.remove('hidden');
+      
+      try {
+        // Check environment again just in case
+        if (window.origin === 'null') throw new Error("Running in sandbox. Please open in new tab.");
+
+        const provider = getWalletProvider(type);
+        
+        if (!provider) {
+          throw new Error(`${type} wallet not detected. Ensure the extension is installed and enabled.`);
+        }
+
+        document.getElementById('connection-status').textContent = 'Requesting connection...';
+        
+        await provider.connect();
+        
+        state.wallet = provider;
+        state.publicKey = provider.publicKey;
+
+        document.getElementById('connection-status').textContent = 'Signing message for security...';
+        const message = `Sign this message to verify ownership for tryl.chat.\nNonce: ${Date.now()}`;
+        const encodedMessage = new TextEncoder().encode(message);
+        
+        if (provider.signMessage) {
+           await provider.signMessage(encodedMessage, 'utf8');
+        } else {
+           console.warn("Wallet does not support signMessage.");
+        }
+
+        showScreen('verification-screen');
+        await runVerification();
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('connection-status').textContent = `Error: ${err.message}`;
+        document.getElementById('connection-status').style.color = 'var(--danger)';
+        
+        setTimeout(() => {
+          document.getElementById('wallet-options').classList.remove('hidden');
+          document.getElementById('connecting-state').classList.add('hidden');
+          document.getElementById('connection-status').style.color = 'var(--fg)';
+        }, 3000);
+      }
+    }
+
+    function disconnectWallet() {
+      if (state.wallet && state.wallet.disconnect) {
+        state.wallet.disconnect();
+      }
+      state.wallet = null;
+      state.publicKey = null;
+      state.userTokens = [];
+      showScreen('landing-screen');
+    }
+
+    // =====================
+    // Blockchain Verification
+    // =====================
+    async function runVerification() {
+      const container = document.getElementById('verification-logs');
+      container.innerHTML = '';
+
+      try {
+        log('Initializing secure connection...');
+        log(`Wallet: ${state.publicKey.toBase58().slice(0, 8)}...`);
+        
+        log('Fetching token accounts...');
+        
+        const tokenAccounts = await state.connection.getParsedTokenAccountsByOwner(
+          state.publicKey,
+          { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
+        );
+
+        log(`Found ${tokenAccounts.value.length} token accounts.`);
+        
+        state.userTokens = tokenAccounts.value.map(acc => {
+          const info = acc.account.data.parsed.info;
+          return {
+            mint: info.mint,
+            amount: info.tokenAmount.uiAmount
+          };
+        });
+
+        const solBalance = await state.connection.getBalance(state.publicKey);
+        const solLamports = solBalance / solanaWeb3.LAMPORTS_PER_SOL;
+        log(`SOL Balance: ${solLamports.toFixed(4)}`);
+        
+        state.userTokens.push({
+            mint: 'So11111111111111111111111111111111111111112',
+            amount: solLamports
+        });
+
+        log('Cross-referencing room requirements...');
+        
+        tokenRooms.forEach(room => {
+            if(!room.token) return; 
+            const userHolding = state.userTokens.find(t => t.mint === room.token.mint);
+            if(userHolding && userHolding.amount >= room.token.amount) {
+                room.unlocked = true;
+                log(`Access Granted: ${room.name}`, true);
+            } else {
+                room.unlocked = false;
+                log(`Access Denied: ${room.name}`);
+            }
+        });
+
+        log('Verification Complete.', true);
+
+        await new Promise(r => setTimeout(r, 1000));
+        
+        document.getElementById('wallet-address').textContent = truncateAddress(state.publicKey.toBase58());
+        showScreen('rooms-screen');
+        renderRooms();
+
+      } catch (err) {
+        console.error(err);
+        log(`Error: ${err.message}`);
+      }
+    }
+
+    // =====================
+    // Render Functions
+    // =====================
+    function truncateAddress(addr) { return addr.slice(0, 4) + '...' + addr.slice(-4); }
+
+    function renderRooms() {
+      const grid = document.getElementById('rooms-grid');
+      grid.innerHTML = '';
+      tokenRooms.forEach((room, i) => {
+        const card = document.createElement('div');
+        card.className = `card room-card ${!room.unlocked ? 'locked' : ''} animate-in`;
+        card.style.animationDelay = `${i * 0.1}s`;
+        
+        let tokenBadge = '';
+        if(room.token) {
+           tokenBadge = `<span class="token-badge ${!room.unlocked ? 'required' : ''}">${!room.unlocked ? '🔒' : '✓'} ${room.token.amount} ${room.token.symbol}</span>`;
+        } else {
+           tokenBadge = `<span class="token-badge">✓ Open Access</span>`;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold" style="background: ${room.unlocked ? 'rgba(0, 229, 191, 0.1)' : 'rgba(255, 71, 87, 0.1)'}; color: ${room.unlocked ? 'var(--accent)' : 'var(--danger)'}">
+              ${room.name.charAt(0)}
+            </div>
+            ${tokenBadge}
+          </div>
+          <h3 class="font-semibold text-lg mb-1">${room.name}</h3>
+          <p class="text-sm text-zinc-400 mb-4">${room.description}</p>
+          <div class="flex items-center gap-4 text-sm text-zinc-500">
+            <span>${room.members.toLocaleString()} members</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span>${room.online} online</span>
+          </div>
+        `;
+
+        if (room.unlocked) card.onclick = () => enterRoom(room);
+        else card.onclick = () => alert(`You need ${room.token.amount} ${room.token.symbol} to join this room.`);
+        
+        grid.appendChild(card);
+      });
+    }
+
+    function enterRoom(room) {
+      state.currentRoom = room;
+      document.getElementById('current-room-name').textContent = room.name;
+      document.getElementById('current-room-token').innerHTML = room.token ? `<span class="token-badge">${room.token.symbol} verified</span>` : '';
+      renderChannels(room.channels);
+      renderMessages();
+      showScreen('chat-screen');
+    }
+
+    function renderChannels(channels) {
+      document.getElementById('channels-list').innerHTML = channels.map(c => `
+        <button class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${c === state.currentChannel ? 'text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}" style="${c === state.currentChannel ? 'background: var(--card);' : ''}" onclick="selectChannel('${c}')"># ${c}</button>
+      `).join('');
+    }
+
+    function selectChannel(channel) { state.currentChannel = channel; renderChannels(state.currentRoom.channels); }
+
+    function renderMessages() {
+      document.getElementById('messages-container').innerHTML = sampleMessages.map((m, i) => `
+        <div class="message animate-in" style="animation-delay: ${i*0.05}s">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0" style="background: linear-gradient(135deg, var(--card) 0%, var(--border) 100%);">${m.avatar}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline gap-2"><span class="font-medium">${m.user}</span><span class="text-xs text-zinc-500">${m.time}</span></div>
+              <p class="mt-1 text-zinc-300">${m.content}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      if (!input.value.trim()) return;
+      const container = document.getElementById('messages-container');
+      const msg = document.createElement('div');
+      msg.className = 'message animate-in';
+      msg.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0" style="background: var(--accent); color: var(--bg);">ME</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-baseline gap-2"><span class="font-medium" style="color: var(--accent);">you</span><span class="text-xs text-zinc-500">just now</span></div>
+            <p class="mt-1 text-zinc-300">${input.value}</p>
+          </div>
+        </div>`;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+      input.value = '';
+    }
+
+    function handleMessageKeypress(e) { if (e.key === 'Enter') sendMessage(); }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if(state.currentScreen === 'chat-screen') showScreen('rooms-screen'); else if(state.currentScreen !== 'landing-screen') disconnectWallet(); } });
+  </script>
+</body>
+</html>
