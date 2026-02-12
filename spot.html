@@ -3,254 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Spotify Status</title>
+    <title>Now Playing</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        /* --- Base Styles --- */
         body {
             margin: 0;
-            background-color: #121212;
+            background-color: #000000; /* Pure black background */
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
 
-        /* --- Main Card --- */
-        .widget-card {
-            background: #181818;
+        /* --- Card Container --- */
+        .card {
+            width: 340px; /* Fixed width */
+            background: #121212; /* Dark gray card */
             border-radius: 12px;
-            padding: 24px;
-            width: 380px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         /* --- Album Art --- */
-        .artwork-container { width: 280px; height: 280px; }
-        .artwork {
-            width: 100%; height: 100%;
-            border-radius: 8px;
-            object-fit: cover;
-            background: #282828;
+        .artwork-wrapper {
+            width: 300px; /* Standard fixed size */
+            height: 300px; /* Standard fixed size */
+            margin-bottom: 20px;
         }
 
-        /* --- Track Info --- */
-        .track-info { width: 100%; text-align: left; padding: 0 4px; }
-        .track-title {
-            font-size: 20px; font-weight: 700; margin: 0 0 6px 0;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        .artwork {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #282828;
+            display: block; /* Removes bottom spacing */
         }
-        .track-artist {
-            font-size: 15px; margin: 0;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            color: #b3b3b3;
+
+        /* --- Text Info --- */
+        .info {
+            width: 300px; /* Match image width */
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist {
+            font-size: 14px;
+            margin: 0;
+            color: #a0a0a0; /* Slightly gray artist name */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* --- Progress Bar --- */
-        .progress-container { width: 100%; display: flex; flex-direction: column; gap: 6px; }
-        .progress-bar-bg { width: 100%; height: 4px; background-color: #4d4d4d; border-radius: 2px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background-color: #1db954; border-radius: 2px; width: 0%; }
-        .time-labels { display: flex; justify-content: space-between; font-size: 11px; color: #b3b3b3; font-variant-numeric: tabular-nums; }
+        .progress-wrapper {
+            width: 300px;
+            margin-bottom: 20px;
+        }
 
-        /* --- Status Bar --- */
-        .status-bar {
+        .bar-bg {
             width: 100%;
-            display: flex; align-items: center; justify-content: flex-start;
-            padding-top: 10px; border-top: 1px solid #282828;
-        }
-        .live-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; font-weight: 600; }
-        
-        /* Dot Styles */
-        .live-dot {
-            width: 8px; height: 8px;
-            background-color: #1db954; /* Default Green */
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
-            animation: pulse-animation 2s infinite;
-        }
-        
-        /* Red Dot Class */
-        .live-dot.red {
-            background-color: #eb4034; /* Red */
-            box-shadow: 0 0 8px rgba(235, 64, 52, 0.6);
-            animation: none; /* No pulse when red */
+            height: 4px;
+            background: #4d4d4d;
+            border-radius: 2px;
+            overflow: hidden;
         }
 
-        @keyframes pulse-animation {
+        .bar-fill {
+            height: 100%;
+            background: #1db954; /* Spotify Green */
+            width: 0%;
+            border-radius: 2px;
+        }
+
+        .times {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        /* --- Footer Status --- */
+        .footer {
+            width: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #282828;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #eb4034; /* Red by default */
+        }
+
+        .dot.live {
+            background: #1db954;
+            box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
             0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; }
         }
 
-        /* --- OFFLINE / NOT LISTENING STATE --- */
+        /* --- Offline State --- */
         .hidden { display: none !important; }
-        .offline-message { padding: 40px 0; text-align: center; }
-        .offline-text { font-size: 18px; color: #b3b3b3; margin-top: 10px; }
-        .frub-message { color: #ffffff; font-weight: 600; }
+        
+        .offline-screen {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .offline-text {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #a0a0a0;
+        }
     </style>
 </head>
 <body>
 
-    <div class="widget-card">
+    <div class="card">
         
-        <!-- STATE 1: PLAYING (Hidden by default) -->
-        <div id="playing-state" class="hidden">
-            <div class="artwork-container">
-                <img id="album-art" class="artwork" src="https://via.placeholder.com/280" alt="Album Art">
+        <!-- Playing State -->
+        <div id="playing-view">
+            <div class="artwork-wrapper">
+                <img id="art" class="artwork" src="https://via.placeholder.com/300" alt="Album">
             </div>
-            <div class="track-info">
-                <h1 id="song-name" class="track-title">Song Title</h1>
-                <p id="artist-name" class="track-artist">Artist</p>
+            
+            <div class="info">
+                <h1 id="title" class="title">Waiting...</h1>
+                <p id="artist" class="artist">-</p>
             </div>
-            <div class="progress-container">
-                <div class="progress-bar-bg">
-                    <div id="progress-fill" class="progress-bar-fill"></div>
+            
+            <div class="progress-wrapper">
+                <div class="bar-bg">
+                    <div id="bar" class="bar-fill"></div>
                 </div>
-                <div class="time-labels">
-                    <span id="time-current">0:00</span>
-                    <span id="time-total">0:00</span>
+                <div class="times">
+                    <span id="cur">0:00</span>
+                    <span id="tot">0:00</span>
                 </div>
             </div>
         </div>
 
-        <!-- STATE 2: NOT LISTENING (Visible by default) -->
-        <div id="offline-state" class="offline-message">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="#b3b3b3">
+        <!-- Offline State -->
+        <div id="offline-view" class="offline-screen hidden">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="#606060">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
             </svg>
             <div class="offline-text">
-                <span class="frub-message">frub is not listening to music :(</span>
+                <span style="color: white; font-weight: bold;">frub is not listening to music :(</span>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="status-bar">
-            <div class="live-indicator">
-                <!-- Default classes: live-dot red (starts red/offline) -->
-                <div id="live-dot" class="live-dot red"></div>
-                <span id="live-text" style="color: #eb4034;">OFFLINE</span>
+        <div class="footer">
+            <div class="status-badge">
+                <div id="status-dot" class="dot"></div>
+                <span id="status-text" style="color: #eb4034;">Offline</span>
             </div>
         </div>
     </div>
 
     <script>
-        const SERVER_URL = "https://metadata-cult-shades-out.trycloudflare.com";
-        const socket = io(SERVER_URL);
+        const URL = "https://metadata-cult-shades-out.trycloudflare.com";
+        const socket = io(URL);
 
         // Elements
-        const artEl = document.getElementById('album-art');
-        const songEl = document.getElementById('song-name');
-        const artistEl = document.getElementById('artist-name');
-        const progressFill = document.getElementById('progress-fill');
-        const timeCurrent = document.getElementById('time-current');
-        const timeTotal = document.getElementById('time-total');
-        const dotEl = document.getElementById('live-dot');
-        const textEl = document.getElementById('live-text');
+        const viewPlaying = document.getElementById('playing-view');
+        const viewOffline = document.getElementById('offline-view');
+        const artEl = document.getElementById('art');
+        const titleEl = document.getElementById('title');
+        const artistEl = document.getElementById('artist');
+        const barEl = document.getElementById('bar');
+        const curEl = document.getElementById('cur');
+        const totEl = document.getElementById('tot');
+        const dotEl = document.getElementById('status-dot');
+        const textEl = document.getElementById('status-text');
 
-        // State Containers
-        const playingState = document.getElementById('playing-state');
-        const offlineState = document.getElementById('offline-state');
+        // Logic
+        let playing = false;
+        let duration = 0;
+        let progress = 0;
+        let lastTime = 0;
 
-        // State variables
-        let isPlaying = false;
-        let songDuration = 0;
-        let lastKnownProgress = 0; 
-        let lastTimestamp = 0;     
+        // Format time helper
+        const fmt = (ms) => {
+            let s = Math.floor(ms / 1000);
+            let m = Math.floor(s / 60);
+            s = s % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
 
-        function formatTime(ms) {
-            if (ms < 0) ms = 0;
-            const totalSeconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const secondsStr = seconds < 10 ? '0' + seconds : seconds;
-            return `${minutes}:${secondsStr}`;
-        }
-
-        // Helper to set Status Bar
-        function setTicker(isOnline) {
-            if (isOnline) {
-                dotEl.classList.remove('red');
-                textEl.style.color = "#1db954";
-                textEl.innerText = "LIVE";
-            } else {
-                dotEl.classList.add('red');
-                textEl.style.color = "#eb4034";
-                textEl.innerText = "OFFLINE";
-            }
-        }
-
-        // --- LOCAL TIMER LOOP ---
+        // Local animation loop (runs every 16ms for smoothness)
         setInterval(() => {
-            if (isPlaying && songDuration > 0) {
-                const timePassed = Date.now() - lastTimestamp;
-                const estimatedProgress = lastKnownProgress + timePassed;
-
-                if (estimatedProgress < songDuration) {
-                    const percent = (estimatedProgress / songDuration) * 100;
-                    progressFill.style.width = `${percent}%`;
-                    timeCurrent.textContent = formatTime(estimatedProgress);
-                } else {
-                    progressFill.style.width = `100%`;
-                    timeCurrent.textContent = formatTime(songDuration);
-                }
+            if (playing) {
+                let passed = Date.now() - lastTime;
+                let current = progress + passed;
+                
+                if (current > duration) current = duration;
+                
+                let pct = (current / duration) * 100;
+                barEl.style.width = `${pct}%`;
+                curEl.textContent = fmt(current);
             }
-        }, 250);
+        }, 16);
 
-        // --- SOCKET EVENTS ---
-        socket.on('connect', () => {
-            // Don't set to LIVE yet, wait for data
-            console.log("Connected to server.");
-        });
+        // Set status indicator
+        const setStatus = (isLive) => {
+            if (isLive) {
+                dotEl.classList.add('live');
+                textEl.style.color = "#1db954";
+                textEl.textContent = "LIVE";
+            } else {
+                dotEl.classList.remove('live');
+                textEl.style.color = "#eb4034";
+                textEl.textContent = "OFFLINE";
+            }
+        };
 
+        // Socket events
+        socket.on('connect', () => console.log("Connected"));
+        
         socket.on('disconnect', () => {
-            setTicker(false); // Red
-            playingState.classList.add('hidden');
-            offlineState.classList.remove('hidden');
-            isPlaying = false;
+            setStatus(false);
+            viewPlaying.classList.add('hidden');
+            viewOffline.classList.remove('hidden');
+            playing = false;
         });
 
         socket.on('spotify_update', (data) => {
-            // Update metadata
-            artEl.src = data.albumArt || 'https://via.placeholder.com/280';
-            songEl.textContent = data.song;
+            // Update text strictly
+            titleEl.textContent = data.song;
             artistEl.textContent = data.artist;
-            songDuration = data.duration;
-            timeTotal.textContent = formatTime(data.duration);
+            
+            // Update image
+            artEl.src = data.albumArt || 'https://via.placeholder.com/300';
+            
+            // Update duration
+            duration = data.duration;
+            totEl.textContent = fmt(duration);
 
             if (data.isPlaying) {
-                // --- PLAYING STATE ---
-                isPlaying = true;
-                
-                // Switch Views
-                playingState.classList.remove('hidden');
-                offlineState.classList.add('hidden');
+                playing = true;
+                progress = data.progress;
+                lastTime = Date.now();
 
-                // Set Ticker Green
-                setTicker(true);
+                // Switch views
+                viewPlaying.classList.remove('hidden');
+                viewOffline.classList.add('hidden');
+                setStatus(true);
 
-                // Sync Logic
-                lastKnownProgress = data.progress;
-                lastTimestamp = Date.now();
-                
-                const percent = (data.progress / data.duration) * 100;
-                progressFill.style.width = `${percent}%`;
-                timeCurrent.textContent = formatTime(data.progress);
+                // Instant visual update
+                barEl.style.width = `${(progress/duration)*100}%`;
+                curEl.textContent = fmt(progress);
 
             } else {
-                // --- NOT LISTENING STATE ---
-                isPlaying = false;
-                
-                // Switch Views
-                playingState.classList.add('hidden');
-                offlineState.classList.remove('hidden');
-
-                // Set Ticker Red
-                setTicker(false);
+                playing = false;
+                viewPlaying.classList.add('hidden');
+                viewOffline.classList.remove('hidden');
+                setStatus(false);
             }
         });
     </script>
