@@ -9,15 +9,13 @@
         /* --- Base Styles --- */
         body {
             margin: 0;
-            padding: 0;
             background-color: #121212;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            overflow: hidden;
         }
 
         /* --- Main Card --- */
@@ -31,39 +29,29 @@
             flex-direction: column;
             align-items: center;
             gap: 20px;
-            transition: transform 0.2s ease;
-        }
-
-        .widget-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+            position: relative;
         }
 
         /* --- Album Art --- */
         .artwork-container {
-            position: relative;
             width: 280px;
             height: 280px;
         }
-
         .artwork {
             width: 100%;
             height: 100%;
             border-radius: 8px;
             object-fit: cover;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            transition: opacity 0.3s ease;
-            /* Placeholder background */
             background: #282828;
+            transition: opacity 0.5s ease;
         }
 
         /* --- Track Info --- */
         .track-info {
             width: 100%;
             text-align: left;
-            padding: 0 4px; /* Align with art edges */
+            padding: 0 4px;
         }
-
         .track-title {
             font-size: 20px;
             font-weight: 700;
@@ -71,9 +59,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: #ffffff;
         }
-
         .track-artist {
             font-size: 15px;
             margin: 0;
@@ -81,7 +67,37 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: #b3b3b3;
-            transition: color 0.3s ease;
+        }
+
+        /* --- Progress Bar Section --- */
+        .progress-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background-color: #4d4d4d; 
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #1db954;
+            border-radius: 2px;
+            width: 0%;
+        }
+
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #b3b3b3;
+            font-variant-numeric: tabular-nums;
         }
 
         /* --- Status Bar --- */
@@ -89,11 +105,10 @@
             width: 100%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             padding-top: 10px;
             border-top: 1px solid #282828;
         }
-
         .live-indicator {
             display: flex;
             align-items: center;
@@ -101,129 +116,188 @@
             font-size: 12px;
             text-transform: uppercase;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
-
         .live-dot {
             width: 8px;
             height: 8px;
-            background-color: #1db954; /* Spotify Green */
+            background-color: #1db954;
             border-radius: 50%;
             box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
             animation: pulse-animation 2s infinite;
         }
-
         .live-dot.disconnected {
             background-color: #b3b3b3;
             box-shadow: none;
             animation: none;
         }
+        @keyframes pulse-animation {
+            0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; }
+        }
 
-        .live-text {
-            color: #b3b3b3;
+        /* --- OFFLINE / NOT LISTENING STATE --- */
+        .hidden { display: none !important; }
+        
+        .offline-message {
+            padding: 40px 0;
+            text-align: center;
         }
         
-        .live-text.connected {
-            color: #1db954;
+        .offline-text {
+            font-size: 18px;
+            color: #b3b3b3;
+            margin-top: 10px;
         }
 
-        /* --- Animations --- */
-        @keyframes pulse-animation {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.4s ease-out;
+        .frub-message {
+            color: #ffffff;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
 
     <div class="widget-card">
-        <!-- Album Art Section -->
-        <div class="artwork-container">
-            <img id="album-art" class="artwork" src="https://via.placeholder.com/280" alt="Album Art">
+        
+        <!-- STATE 1: PLAYING (HIDDEN BY DEFAULT) -->
+        <!-- I added 'hidden' class here so it doesn't flash "Waiting" -->
+        <div id="playing-state" class="hidden">
+            <div class="artwork-container">
+                <img id="album-art" class="artwork" src="https://via.placeholder.com/280" alt="Album Art">
+            </div>
+
+            <div class="track-info">
+                <h1 id="song-name" class="track-title">Song Title</h1>
+                <p id="artist-name" class="track-artist">Artist</p>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar-bg">
+                    <div id="progress-fill" class="progress-bar-fill"></div>
+                </div>
+                <div class="time-labels">
+                    <span id="time-current">0:00</span>
+                    <span id="time-total">0:00</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Text Info Section -->
-        <div class="track-info">
-            <h1 id="song-name" class="track-title">Waiting for data...</h1>
-            <p id="artist-name" class="track-artist">Connect to Spotify</p>
+        <!-- STATE 2: NOT LISTENING (VISIBLE BY DEFAULT) -->
+        <!-- I removed 'hidden' so this shows up immediately on load -->
+        <div id="offline-state" class="offline-message">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="#b3b3b3">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+            </svg>
+            <div class="offline-text">
+                <span class="frub-message">frub is not listening to music :(</span>
+            </div>
         </div>
 
-        <!-- Footer Status -->
+        <!-- Footer (Always Visible) -->
         <div class="status-bar">
             <div class="live-indicator">
                 <div id="live-dot" class="live-dot disconnected"></div>
-                <span id="live-text" class="live-text">CONNECTING</span>
+                <span id="live-text" style="color: #b3b3b3;">CONNECTING</span>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        // Your specific Cloudflare Tunnel URL
         const SERVER_URL = "https://metadata-cult-shades-out.trycloudflare.com";
+        const socket = io(SERVER_URL);
 
-        // --- ELEMENTS ---
+        // Elements
         const artEl = document.getElementById('album-art');
         const songEl = document.getElementById('song-name');
         const artistEl = document.getElementById('artist-name');
+        const progressFill = document.getElementById('progress-fill');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
         const dotEl = document.getElementById('live-dot');
         const textEl = document.getElementById('live-text');
 
-        // --- SOCKET.IO CONNECTION ---
-        const socket = io(SERVER_URL);
+        // State Containers
+        const playingState = document.getElementById('playing-state');
+        const offlineState = document.getElementById('offline-state');
 
-        // 1. Handle Connection Events
+        // --- LOCAL STATE FOR SMOOTH TIMING ---
+        let isPlaying = false;
+        let songDuration = 0;
+        let lastKnownProgress = 0; 
+        let lastTimestamp = 0;     
+
+        function formatTime(ms) {
+            if (ms < 0) ms = 0;
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const secondsStr = seconds < 10 ? '0' + seconds : seconds;
+            return `${minutes}:${secondsStr}`;
+        }
+
+        // --- LOCAL TIMER LOOP ---
+        setInterval(() => {
+            if (isPlaying && songDuration > 0) {
+                const timePassed = Date.now() - lastTimestamp;
+                const estimatedProgress = lastKnownProgress + timePassed;
+
+                if (estimatedProgress < songDuration) {
+                    const percent = (estimatedProgress / songDuration) * 100;
+                    progressFill.style.width = `${percent}%`;
+                    timeCurrent.textContent = formatTime(estimatedProgress);
+                } else {
+                    progressFill.style.width = `100%`;
+                    timeCurrent.textContent = formatTime(songDuration);
+                }
+            }
+        }, 250);
+
+        // --- SOCKET EVENTS ---
         socket.on('connect', () => {
-            console.log("Connected to VPS");
             dotEl.classList.remove('disconnected');
-            textEl.classList.add('connected');
+            textEl.style.color = "#1db954";
             textEl.innerText = "LIVE";
+            // Note: We don't switch views here; we wait for actual music data
         });
 
         socket.on('disconnect', () => {
-            console.log("Disconnected from VPS");
             dotEl.classList.add('disconnected');
-            textEl.classList.remove('connected');
+            textEl.style.color = "#b3b3b3";
             textEl.innerText = "OFFLINE";
+            
+            // Switch to Offline View on Disconnect
+            playingState.classList.add('hidden');
+            offlineState.classList.remove('hidden');
+            isPlaying = false;
         });
 
-        // 2. Handle Spotify Data Updates
         socket.on('spotify_update', (data) => {
-            console.log("Received update:", data);
-
-            // Add fade-in animation class
-            artEl.classList.remove('fade-in');
-            songEl.classList.remove('fade-in');
-            artistEl.classList.remove('fade-in');
-            
-            // Trigger reflow to restart animation
-            void artEl.offsetWidth; 
+            // Update metadata
+            artEl.src = data.albumArt || 'https://via.placeholder.com/280';
+            songEl.textContent = data.song;
+            artistEl.textContent = data.artist;
+            songDuration = data.duration;
+            timeTotal.textContent = formatTime(data.duration);
 
             if (data.isPlaying) {
-                // Update content
-                artEl.src = data.albumArt || 'https://via.placeholder.com/280';
-                songEl.textContent = data.song;
-                artistEl.textContent = data.artist;
+                // --- SHOW PLAYING STATE ---
+                isPlaying = true;
+                
+                playingState.classList.remove('hidden');
+                offlineState.classList.add('hidden');
 
-                // Apply animation
-                artEl.classList.add('fade-in');
-                songEl.classList.add('fade-in');
-                artistEl.classList.add('fade-in');
+                lastKnownProgress = data.progress;
+                lastTimestamp = Date.now();
+                
+                const percent = (data.progress / data.duration) * 100;
+                progressFill.style.width = `${percent}%`;
+                timeCurrent.textContent = formatTime(data.progress);
+
             } else {
-                // Handle stopped/paused state
-                artEl.src = 'https://via.placeholder.com/280';
-                songEl.textContent = "Not Playing";
-                artistEl.textContent = "Playback paused or stopped";
+                // --- SHOW NOT LISTENING STATE ---
+                isPlaying = false;
+                
+                playingState.classList.add('hidden');
+                offlineState.classList.remove('hidden');
             }
         });
     </script>
