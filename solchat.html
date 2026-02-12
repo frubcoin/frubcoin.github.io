@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tryl.chat — Real Token Gated Chat</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Solana Web3.js -->
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <title>tryl.chat — Solana Gated Chat</title>
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Solana Web3.js -->
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  
   <style>
     :root {
       --bg: #050505;
@@ -19,10 +22,8 @@
       --fg-muted: #666666;
       --fg-dim: #333333;
       --accent: #00ff88;
-      --accent-dim: #00cc6a;
       --border: #1a1a1a;
       --danger: #ff3366;
-      --warning: #ffaa00;
     }
 
     * { box-sizing: border-box; }
@@ -33,14 +34,16 @@
       color: var(--fg);
     }
 
+    body { margin: 0; min-height: 100vh; }
+
     .font-pixel { font-family: 'Press Start 2P', cursive; }
 
-    /* Scanlines */
+    /* Pixel aesthetic overlays */
     .scanlines::before {
       content: '';
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.15) 2px, rgba(0, 0, 0, 0.15) 4px);
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.2) 2px, rgba(0, 0, 0, 0.2) 4px);
       pointer-events: none;
       z-index: 9999;
     }
@@ -55,10 +58,10 @@
       box-shadow: 4px 0 0 0 var(--accent), -4px 0 0 0 var(--accent), 0 4px 0 0 var(--accent), 0 -4px 0 0 var(--accent);
     }
 
-    /* Scrollbar */
+    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 0; }
+    ::-webkit-scrollbar-thumb { background: var(--fg-dim); }
 
     /* Animations */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -69,7 +72,7 @@
     .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
     .animate-pulse-glow { animation: pixelPulse 2s ease-in-out infinite; }
 
-    /* Button */
+    /* Buttons */
     .btn-pixel {
       position: relative;
       padding: 12px 24px;
@@ -99,7 +102,7 @@
     .btn-pixel:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-pixel:disabled::before { transform: none; }
 
-    /* Input */
+    /* Inputs */
     .input-pixel {
       background: var(--bg);
       border: 2px solid var(--border);
@@ -109,6 +112,7 @@
       font-size: 14px;
       outline: none;
       transition: border-color 0.2s ease;
+      width: 100%;
     }
     .input-pixel:focus { border-color: var(--accent); }
 
@@ -130,7 +134,7 @@
       border-left: 3px solid var(--fg-muted);
       padding: 12px 16px;
       margin-bottom: 8px;
-      max-width: 80%;
+      max-width: 85%;
     }
     .chat-bubble.own { border-left-color: var(--accent); margin-left: auto; }
 
@@ -139,18 +143,17 @@
     .view.active { display: flex; animation: fadeIn 0.3s ease-out forwards; }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-      }
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
       .scanlines::before { display: none; }
     }
   </style>
 </head>
-<body class="scanlines min-h-screen">
+<body class="scanlines">
   
-  <!-- Background Effects -->
+  <!-- Background Grid -->
   <div class="fixed inset-0 opacity-5 pointer-events-none" style="background-image: linear-gradient(var(--fg-dim) 1px, transparent 1px), linear-gradient(90deg, var(--fg-dim) 1px, transparent 1px); background-size: 20px 20px;"></div>
+  
+  <!-- Ambient Glow -->
   <div class="fixed top-0 left-1/4 w-96 h-96 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(0,255,136,0.1) 0%, transparent 70%); filter: blur(60px);"></div>
 
   <div id="app" class="relative min-h-screen">
@@ -174,8 +177,8 @@
         <p class="text-sm" style="color: var(--fg-muted);">token-gated conversations on solana</p>
       </div>
 
-      <!-- Onboarding -->
-      <div id="onboarding-steps" class="w-full max-w-md">
+      <!-- Onboarding Steps Container -->
+      <div id="onboarding-container" class="w-full max-w-md">
         
         <!-- Step 1: Connect -->
         <div id="step-1" class="onboarding-step animate-slide-up" style="animation-delay: 0.2s;">
@@ -192,7 +195,7 @@
             <button id="connect-btn" onclick="connectWallet()" class="btn-pixel accent w-full">
               Connect Phantom
             </button>
-            <p id="error-msg" class="text-xs mt-4 hidden" style="color: var(--danger);"></p>
+            <p id="error-msg" class="text-xs mt-4 hidden text-center" style="color: var(--danger);"></p>
           </div>
         </div>
 
@@ -251,14 +254,13 @@
         
       </div>
       
-      <!-- Security Note -->
       <div class="text-center mt-8 animate-fade-in" style="animation-delay: 0.5s;">
         <p class="text-xs flex items-center justify-center gap-2" style="color: var(--fg-dim);">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="11" width="18" height="11" rx="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          Read-only access. No private keys requested.
+          Read-only access. No private keys shared.
         </p>
       </div>
     </div>
@@ -319,7 +321,7 @@
       <footer class="border-t-2 p-4 flex-shrink-0" style="border-color: var(--border); background: var(--bg-elevated);">
         <div class="max-w-4xl mx-auto">
           <form onsubmit="sendMessage(event)" class="flex gap-3">
-            <input type="text" id="chat-input" class="input-pixel flex-1" placeholder="Type a message..." autocomplete="off">
+            <input type="text" id="chat-input" class="input-pixel" placeholder="Type a message..." autocomplete="off">
             <button type="submit" class="btn-pixel accent px-6">Send</button>
           </form>
         </div>
@@ -333,86 +335,41 @@
     // CONFIGURATION & STATE
     // =============================================
     
-    // Mainnet RPC (Use your own for production)
+    // Use a public RPC endpoint (for demo purposes). 
+    // For production, use a dedicated provider (Helius, QuickNode, Alchemy).
     const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
     
-    // State
     let connection = null;
     let walletPubKey = null;
-    let userBalances = {}; // { "MintAddress": amount }
+    let userBalances = {}; // Stores: { "SYMBOL": float_amount }
     let currentRoom = null;
     
-    // Messages Store (In-memory for this demo)
+    // Messages Store (In-memory for frontend-only demo)
     const messages = {};
 
-    // Token Definitions (Real Mainnet Mints)
-    // Update 'decimals' based on the actual token specs
+    // Token Mint Addresses (Mainnet)
     const TOKENS = {
       SOL: { mint: null, decimals: 9, name: 'Solana' },
       USDC: { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6, name: 'USDC' },
       BONK: { mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5, name: 'BONK' },
       JUP:  { mint: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', decimals: 6, name: 'Jupiter' },
-      WIF:  { mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', decimals: 6, name: 'dogwifhat' },
-      TRYL: { mint: 'TryLLEvnwpLypggZqpSrWDQjP9e5RQKy7eVZgqRfhL9', decimals: 6, name: 'Tryl' } // Mock Mint for Demo
+      WIF:  { mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', decimals: 6, name: 'dogwifhat' }
     };
 
-    // Room Definitions
+    // Room Configuration
     const rooms = [
-      {
-        id: 'general',
-        name: 'General',
-        description: 'Public lobby for all verified wallets',
-        requirement: null, // No token needed
-        members: 1247,
-        online: 89
-      },
-      {
-        id: 'sol-whales',
-        name: 'SOL Whales',
-        description: 'For holders with 10+ SOL',
-        requirement: { token: 'SOL', amount: 10 },
-        members: 342,
-        online: 28
-      },
-      {
-        id: 'usdc-club',
-        name: 'USDC Club',
-        description: 'Stablecoin holders circle',
-        requirement: { token: 'USDC', amount: 100 },
-        members: 892,
-        online: 56
-      },
-      {
-        id: 'bonk-army',
-        name: 'BONK Army',
-        description: '1M+ BONK Holders',
-        requirement: { token: 'BONK', amount: 1000000 },
-        members: 45,
-        online: 12
-      },
-      {
-        id: 'jup-crew',
-        name: 'JUP Crew',
-        description: 'Jupiter exchange enthusiasts',
-        requirement: { token: 'JUP', amount: 10 },
-        members: 567,
-        online: 34
-      },
-      {
-        id: 'wif-gang',
-        name: 'WIF Gang',
-        description: 'dogwifhat community',
-        requirement: { token: 'WIF', amount: 1 },
-        members: 723,
-        online: 41
-      }
+      { id: 'general', name: 'General', description: 'Public lobby for all verified wallets', requirement: null, members: 1247, online: 89 },
+      { id: 'sol-whales', name: 'SOL Whales', description: 'For holders with 10+ SOL', requirement: { token: 'SOL', amount: 10 }, members: 342, online: 28 },
+      { id: 'usdc-club', name: 'USDC Club', description: 'Stablecoin holders circle', requirement: { token: 'USDC', amount: 100 }, members: 892, online: 56 },
+      { id: 'bonk-army', name: 'BONK Army', description: '1M+ BONK Holders', requirement: { token: 'BONK', amount: 1000000 }, members: 45, online: 12 },
+      { id: 'jup-crew', name: 'JUP Crew', description: 'Jupiter exchange enthusiasts', requirement: { token: 'JUP', amount: 10 }, members: 567, online: 34 },
+      { id: 'wif-gang', name: 'WIF Gang', description: 'dogwifhat community', requirement: { token: 'WIF', amount: 1 }, members: 723, online: 41 }
     ];
 
-    // Seed Messages
+    // Seed initial messages
     rooms.forEach(r => {
       messages[r.id] = [
-        { user: 'system', text: `Welcome to ${r.name}`, time: getTimestamp(), type: 'system' },
-        { user: 'anon', text: 'Token gating active.', time: getTimestamp() }
+        { user: 'system', text: `Welcome to ${r.name}.`, time: getTimestamp(), type: 'system' }
       ];
     });
 
@@ -427,24 +384,26 @@
 
     function shortenKey(key) {
       if (!key) return '????';
-      return `${key.toString().slice(0, 4)}...${key.toString().slice(-4)}`;
+      const str = key.toString();
+      return `${str.slice(0, 4)}...${str.slice(-4)}`;
     }
 
     function showView(id) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById(`view-${id}`).classList.add('active');
+      const v = document.getElementById(`view-${id}`);
+      if(v) v.classList.add('active');
     }
 
     function setStep(n) {
       document.querySelectorAll('.onboarding-step').forEach(s => s.classList.add('hidden'));
-      document.getElementById(`step-${n}`).classList.remove('hidden');
+      const s = document.getElementById(`step-${n}`);
+      if(s) s.classList.remove('hidden');
     }
 
     function checkAccess(room) {
       if (!room.requirement) return true;
-      const { token, amount } = room.requirement;
-      const balance = userBalances[token] || 0;
-      return balance >= amount;
+      const bal = userBalances[room.requirement.token] || 0;
+      return bal >= room.requirement.amount;
     }
 
     // =============================================
@@ -460,16 +419,16 @@
 
       try {
         if (!window.solana || !window.solana.isPhantom) {
-          throw new Error('Phantom wallet not detected. Please install it.');
+           // If on desktop, prompt install. On mobile, deep link might work but usually requires app browser.
+          throw new Error('Phantom wallet not found. Please install Phantom extension.');
         }
 
-        // Connect
+        // Request connection
         const resp = await window.solana.connect();
         walletPubKey = resp.publicKey;
         
-        setStep(2);
+        setStep(2); // Move to verification UI
         
-        // Initialize connection to Solana
         await verifyHoldings();
 
       } catch (err) {
@@ -482,27 +441,30 @@
     }
 
     async function verifyHoldings() {
-      // Connect to RPC
-      connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
-
       try {
-        // Check SOL Balance
-        document.getElementById('verify-1').innerHTML = '⟳'; // Loading indicator
+        // 1. Connect to RPC
+        connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
+
+        // 2. Get SOL Balance
+        document.getElementById('verify-1').innerHTML = '⟳';
         const lamports = await connection.getBalance(walletPubKey);
         userBalances['SOL'] = lamports / solanaWeb3.LAMPORTS_PER_SOL;
         document.getElementById('verify-1').innerHTML = '<span style="color:var(--accent)">✓</span>';
 
-        // Check SPL Tokens
+        // 3. Get SPL Tokens
         document.getElementById('verify-2').innerHTML = '⟳';
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletPubKey, { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") });
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+          walletPubKey, 
+          { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
+        );
         
-        // Parse balances
+        // Parse SPL balances
         tokenAccounts.value.forEach(acc => {
           const info = acc.account.data.parsed.info;
           const mint = info.mint;
-          const amount = info.tokenAmount.uiAmount; // Already converted for UI
+          const amount = info.tokenAmount.uiAmount; 
 
-          // Match against our known tokens
+          // Match against our TOKENS dictionary
           Object.keys(TOKENS).forEach(ticker => {
             if (TOKENS[ticker].mint === mint) {
               userBalances[ticker] = amount;
@@ -511,10 +473,9 @@
         });
         document.getElementById('verify-2').innerHTML = '<span style="color:var(--accent)">✓</span>';
 
-        // Calculate Access
+        // 4. Finalize
         document.getElementById('verify-3').innerHTML = '⟳';
-        // Simulate slight delay for UX
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 600)); // UX delay
         
         const accessible = rooms.filter(r => checkAccess(r)).length;
         document.getElementById('verify-3').innerHTML = '<span style="color:var(--accent)">✓</span>';
@@ -523,18 +484,19 @@
         document.getElementById('room-count').textContent = accessible;
         document.getElementById('wallet-display').textContent = shortenKey(walletPubKey);
         
-        // Show success
         setTimeout(() => setStep(3), 500);
 
       } catch (err) {
         console.error(err);
         alert("Error fetching balances: " + err.message);
-        disconnectWallet();
+        disconnectWallet(); // Reset state on failure
       }
     }
 
     function disconnectWallet() {
-      if (window.solana) window.solana.disconnect();
+      if (window.solana && window.solana.isConnected) {
+        window.solana.disconnect();
+      }
       walletPubKey = null;
       userBalances = {};
       connection = null;
@@ -542,10 +504,11 @@
       document.getElementById('connect-btn').disabled = false;
       document.getElementById('connect-btn').textContent = 'Connect Phantom';
       
-      // Reset checkmarks
+      // Reset UI
       ['verify-1', 'verify-2', 'verify-3'].forEach(id => {
-        document.getElementById(id).innerHTML = '';
-        document.getElementById(id).className = 'w-4 h-4 border-2 border-[var(--fg-dim)]';
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        el.className = 'flex-shrink-0 w-4 h-4 border-2 border-[var(--fg-dim)]';
       });
       
       setStep(1);
@@ -569,6 +532,8 @@
 
       grid.innerHTML = rooms.map((room, idx) => {
         const hasAccess = checkAccess(room);
+        const balance = room.requirement ? (userBalances[room.requirement.token] || 0) : 0;
+        
         return `
           <div 
             class="room-card ${hasAccess ? '' : 'locked'}"
@@ -591,13 +556,12 @@
             </div>
             <p class="text-xs mb-4" style="color: var(--fg-muted);">${room.description}</p>
             ${room.requirement ? `
-              <p class="text-xs mb-4" style="color: var(--fg-dim);">
-                Requires: ${room.requirement.amount.toLocaleString()} ${room.requirement.token}
-                <br>
-                <span style="color: ${userBalances[room.requirement.token] >= room.requirement.amount ? 'var(--accent)' : 'var(--danger)'}">
-                  You have: ${(userBalances[room.requirement.token] || 0).toLocaleString()}
-                </span>
-              </p>
+              <div class="text-xs mb-4" style="color: var(--fg-dim);">
+                <p>Requires: ${room.requirement.amount.toLocaleString()} ${room.requirement.token}</p>
+                <p style="color: ${balance >= room.requirement.amount ? 'var(--accent)' : 'var(--danger)'}">
+                  You have: ${balance.toLocaleString()}
+                </p>
+              </div>
             ` : ''}
             <div class="flex items-center gap-4 text-xs" style="color: var(--fg-dim);">
               <span>${room.members} members</span>
@@ -644,8 +608,8 @@
       const container = document.getElementById('chat-messages').querySelector('.space-y-2');
       const msgs = messages[currentRoom.id] || [];
       
-      container.innerHTML = msgs.map((m, i) => `
-        <div class="chat-bubble ${m.type === 'system' ? 'border-l-[var(--fg-dim)] text-center w-full' : ''} ${m.user === 'you' ? 'own' : ''}" style="animation: slideUp 0.2s ease-out forwards; opacity: 0;">
+      container.innerHTML = msgs.map(m => `
+        <div class="chat-bubble ${m.type === 'system' ? 'border-l-[var(--fg-dim)] text-center w-full' : ''} ${m.user === 'you' ? 'own' : ''}">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-xs font-mono" style="color: ${m.user === 'you' ? 'var(--accent)' : 'var(--fg)'};">${m.user}</span>
             <span class="text-xs" style="color: var(--fg-dim);">${m.time}</span>
@@ -654,7 +618,6 @@
         </div>
       `).join('');
 
-      // Auto scroll
       const scrollEl = document.getElementById('chat-messages');
       scrollEl.scrollTop = scrollEl.scrollHeight;
     }
@@ -675,8 +638,8 @@
       input.value = '';
       renderMessages();
       
-      // Simulate reply
-      simulateReply();
+      // Simulate a reply
+      if (Math.random() > 0.3) simulateReply();
     }
 
     function simulateReply() {
@@ -704,27 +667,31 @@
     function copyWallet() {
       if(walletPubKey) {
         navigator.clipboard.writeText(walletPubKey.toString());
-        // Optional: Add a visual confirmation
+        alert("Address copied!");
       }
     }
 
     // =============================================
-    // INITIALIZATION
+    // EVENT LISTENERS & INIT
     // =============================================
-    
-    // Handle redirect back from Phantom
-    if (window.solana && window.solana.isPhantom) {
+
+    // Handle Phantom reconnection (if user refreshes page)
+    if (window.solana) {
       window.solana.on('connect', () => {
-        // If we are on step 1 and suddenly connected, proceed
-        if (document.getElementById('step-1').classList.contains('onboarding-step') && !document.getElementById('step-1').classList.contains('hidden')) {
-            connectWallet();
+        // Auto-reconnect logic could go here, but for a gated app, 
+        // forcing the user to click "Connect" again is often safer/clearer.
+        console.log("Phantom connected.");
+      });
+      
+      window.solana.on('disconnect', () => {
+        console.log("Phantom disconnected.");
+        // If the user disconnects from the extension popup, reflect it in UI
+        if(walletPubKey) {
+          disconnectWallet();
         }
       });
-      window.solana.on('disconnect', () => {
-        disconnectWallet();
-      });
     }
-
+    
   </script>
 </body>
 </html>
