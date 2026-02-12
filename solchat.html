@@ -5,566 +5,910 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>tryl.chat — Token-Gated Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0b; --bg-elevated: #111113; --fg: #fafafa; --muted: #71717a;
-      --accent: #00e5bf; --accent-dim: #00b396; --card: #18181b;
-      --border: #27272a; --danger: #ff4757; --success: #00e5bf;
+      --bg: #050505;
+      --bg-elevated: #0a0a0a;
+      --bg-card: #111111;
+      --fg: #ffffff;
+      --fg-muted: #666666;
+      --fg-dim: #333333;
+      --accent: #00ff88;
+      --accent-dim: #00cc6a;
+      --border: #1a1a1a;
+      --danger: #ff3366;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; overflow-x: hidden; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    
-    .wordmark { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 300; letter-spacing: -0.04em; display: inline-flex; align-items: baseline; }
-    .wordmark .tryl { font-weight: 700; background: linear-gradient(135deg, var(--fg) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .wordmark .dot { color: var(--accent); font-weight: 300; }
-    .wordmark .chat { font-weight: 300; color: var(--muted); }
 
-    .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(0, 229, 191, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 191, 0.03) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
-    .grid-bg::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 191, 0.12), transparent); }
-    
-    .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-    .orb-1 { width: 400px; height: 400px; background: rgba(0, 229, 191, 0.08); top: -100px; right: -100px; animation: float 20s ease-in-out infinite; }
-    .orb-2 { width: 300px; height: 300px; background: rgba(0, 229, 191, 0.05); bottom: -50px; left: -50px; animation: float 15s ease-in-out infinite reverse; }
-    @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -30px) scale(1.1); } }
+    * {
+      box-sizing: border-box;
+    }
 
-    .app-container { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
-    .screen { display: none; flex: 1; animation: fadeIn 0.4s ease-out; }
-    .screen.active { display: flex; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    html {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--fg);
+    }
 
-    .btn-primary { background: var(--accent); color: var(--bg); font-weight: 600; padding: 0.875rem 2rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease; font-family: inherit; font-size: 0.9375rem; }
-    .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
-    .btn-primary:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
-    
-    .btn-secondary { background: transparent; color: var(--fg); font-weight: 500; padding: 0.875rem 2rem; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s ease; font-family: inherit; font-size: 0.9375rem; }
-    .btn-secondary:hover { background: var(--card); border-color: var(--muted); }
+    .font-pixel {
+      font-family: 'Press Start 2P', cursive;
+    }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: all 0.2s ease; }
-    
-    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Scanline overlay */
+    .scanlines::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.15) 2px,
+        rgba(0, 0, 0, 0.15) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
 
-    .wallet-btn { display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; max-width: 320px; padding: 1rem 1.5rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s ease; font-family: inherit; color: var(--fg); font-size: 1rem; }
-    .wallet-btn:hover { background: var(--bg-elevated); border-color: var(--accent); transform: translateY(-2px); }
-    
-    .warning-banner { background: rgba(255, 71, 87, 0.1); border-bottom: 1px solid rgba(255, 71, 87, 0.3); color: var(--fg); padding: 1rem; text-align: center; font-size: 0.875rem; position: fixed; top: 0; left: 0; right: 0; z-index: 100; backdrop-filter: blur(10px); display: none; }
-    
-    /* Custom Input Styles */
-    .rpc-input-group { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; width: 100%; max-w-md: 320px; }
-    .rpc-input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; color: var(--fg); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; width: 100%; }
-    .rpc-input:focus { outline: none; border-color: var(--accent); }
-    
-    /* Chat specific styles */
-    .chat-container { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
-    @media (max-width: 768px) { .chat-container { grid-template-columns: 1fr; } }
-    .sidebar { background: var(--bg-elevated); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-    .messages-area { display: flex; flex-direction: column; background: var(--bg); }
-    .message { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); transition: background 0.15s ease; }
-    .message:hover { background: var(--bg-elevated); }
-    .message-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.875rem 1rem; color: var(--fg); font-family: inherit; font-size: 0.9375rem; }
-    .message-input:focus { outline: none; border-color: var(--accent); }
-    .room-card { cursor: pointer; position: relative; overflow: hidden; }
-    .room-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 0%, rgba(0, 229, 191, 0.05) 100%); opacity: 0; transition: opacity 0.2s ease; }
-    .room-card:hover::before { opacity: 1; }
-    .room-card.locked { opacity: 0.6; cursor: not-allowed; }
-    .token-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: rgba(0, 229, 191, 0.1); border: 1px solid rgba(0, 229, 191, 0.2); border-radius: 100px; font-size: 0.75rem; color: var(--accent); }
-    .token-badge.required { background: rgba(255, 71, 87, 0.1); border-color: rgba(255, 71, 87, 0.2); color: var(--danger); }
-    .security-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--success); }
+    /* Pixel border style */
+    .pixel-border {
+      border: 2px solid var(--border);
+      box-shadow: 
+        4px 0 0 0 var(--border),
+        -4px 0 0 0 var(--border),
+        0 4px 0 0 var(--border),
+        0 -4px 0 0 var(--border);
+    }
+
+    .pixel-border-accent {
+      border: 2px solid var(--accent);
+      box-shadow: 
+        4px 0 0 0 var(--accent),
+        -4px 0 0 0 var(--accent),
+        0 4px 0 0 var(--accent),
+        0 -4px 0 0 var(--accent);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--fg-dim);
+      border-radius: 0;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--fg-muted);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pixelPulse {
+      0%, 100% { box-shadow: 0 0 0 0 var(--accent); }
+      50% { box-shadow: 0 0 20px 2px var(--accent); }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.4s ease-out forwards;
+    }
+
+    .animate-pulse-glow {
+      animation: pixelPulse 2s ease-in-out infinite;
+    }
+
+    .cursor-blink::after {
+      content: '_';
+      animation: blink 1s step-end infinite;
+    }
+
+    /* Button styles */
+    .btn-pixel {
+      position: relative;
+      padding: 12px 24px;
+      background: transparent;
+      border: 2px solid var(--fg);
+      color: var(--fg);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-pixel::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: -4px;
+      bottom: -4px;
+      background: var(--fg-dim);
+      z-index: -1;
+      transition: all 0.1s ease;
+    }
+
+    .btn-pixel:hover {
+      transform: translate(2px, 2px);
+    }
+
+    .btn-pixel:hover::before {
+      transform: translate(-2px, -2px);
+    }
+
+    .btn-pixel:active {
+      transform: translate(4px, 4px);
+    }
+
+    .btn-pixel:active::before {
+      transform: translate(-4px, -4px);
+    }
+
+    .btn-pixel.accent {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-pixel.accent::before {
+      background: rgba(0, 255, 136, 0.2);
+    }
+
+    /* Input styles */
+    .input-pixel {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 12px 16px;
+      color: var(--fg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .input-pixel:focus {
+      border-color: var(--accent);
+    }
+
+    .input-pixel::placeholder {
+      color: var(--fg-dim);
+    }
+
+    /* Room card */
+    .room-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .room-card:hover {
+      border-color: var(--fg-muted);
+      transform: translateY(-2px);
+    }
+
+    .room-card.locked {
+      opacity: 0.6;
+    }
+
+    .room-card.locked:hover {
+      border-color: var(--danger);
+    }
+
+    /* Chat bubble */
+    .chat-bubble {
+      background: var(--bg-card);
+      border-left: 3px solid var(--fg-muted);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      max-width: 80%;
+    }
+
+    .chat-bubble.own {
+      border-left-color: var(--accent);
+      margin-left: auto;
+    }
+
+    /* Status indicator */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      display: inline-block;
+    }
+
+    .status-dot.offline {
+      background: var(--fg-muted);
+    }
+
+    /* View transitions */
+    .view {
+      display: none;
+      opacity: 0;
+    }
+
+    .view.active {
+      display: flex;
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .scanlines::before {
+        display: none;
+      }
+    }
   </style>
 </head>
-<body>
-  <div id="env-warning" class="warning-banner">
-    <strong>Sandbox Detected:</strong> Wallets cannot connect here. Please save this file and open it directly in your browser.
-  </div>
+<body class="scanlines min-h-screen">
+  
+  <!-- Background grid -->
+  <div class="fixed inset-0 opacity-5 pointer-events-none" style="background-image: linear-gradient(var(--fg-dim) 1px, transparent 1px), linear-gradient(90deg, var(--fg-dim) 1px, transparent 1px); background-size: 20px 20px;"></div>
+  
+  <!-- Gradient glow orbs -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(0,255,136,0.1) 0%, transparent 70%); filter: blur(60px);"></div>
+  <div class="fixed bottom-0 right-1/4 w-80 h-80 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(0,255,136,0.05) 0%, transparent 70%); filter: blur(40px);"></div>
 
-  <div class="grid-bg"></div>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-
-  <div class="app-container">
-    <!-- Screen 1: Landing -->
-    <div id="landing-screen" class="screen active items-center justify-center p-6">
-      <div class="text-center max-w-xl">
-        <div class="animate-in">
-          <h1 class="wordmark"><span class="tryl">tryl</span><span class="dot">.</span><span class="chat">chat</span></h1>
+  <div id="app" class="relative min-h-screen">
+    
+    <!-- VIEW: Landing / Onboarding -->
+    <div id="view-landing" class="view active flex-col items-center justify-center min-h-screen px-4 py-12">
+      
+      <!-- Logo / Wordmark -->
+      <div class="text-center mb-12 animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="inline-block mb-6">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" class="mx-auto">
+            <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="4"/>
+            <rect x="12" y="12" width="8" height="8" fill="var(--accent)"/>
+            <rect x="28" y="12" width="8" height="8" fill="var(--accent)"/>
+            <rect x="12" y="28" width="24" height="4" fill="var(--accent)"/>
+          </svg>
         </div>
-        <p class="mt-6 text-lg text-zinc-400">Token-gated chat rooms on Solana.</p>
-        <div class="mt-10">
-          <button class="btn-primary" onclick="showScreen('onboarding-screen')">Enter App</button>
-        </div>
+        <h1 class="font-pixel text-2xl md:text-3xl tracking-wider mb-4">
+          <span style="color: var(--accent);">tryl</span><span style="color: var(--fg-muted);">.chat</span>
+        </h1>
+        <p class="text-sm" style="color: var(--fg-muted);">token-gated conversations on solana</p>
       </div>
-    </div>
 
-    <!-- Screen 2: Onboarding -->
-    <div id="onboarding-screen" class="screen flex-col items-center justify-center p-6">
-      <div class="w-full max-w-md flex flex-col items-center">
-        <div class="text-center mb-10">
-          <h2 class="text-2xl font-semibold">Connect Your Wallet</h2>
-          <p class="mt-2 text-zinc-400">Link your Solana wallet to verify token holdings</p>
-        </div>
-
-        <div id="wallet-options" class="space-y-4 flex flex-col items-center">
-          <button class="wallet-btn" onclick="connectWallet('phantom')" aria-label="Connect Phantom">
-            <svg viewBox="0 0 128 128" width="28" height="28"><rect width="128" height="128" rx="24" fill="#AB9FF2"/><path d="M97.3 62.8c-6.4-4.9-15.2-4.1-22.1-.6-5.4 2.8-10.4 7.1-16.3 8.3-5.6 1.1-11.6-.6-15.8-4.5-1.4-1.3-2.5-2.8-3.3-4.4-.5-1 .4-2.1 1.5-1.8 4.3 1.3 8.9 1.1 13.1-.6 5.2-2.1 9.4-6.2 14.6-8.3 7.7-3.1 17-2.5 23.3 2.6 1.8 1.4 3.3 3.1 4.5 5 1.1 1.7-.1 3.9-2.1 4.1-.5.1-.9-.2-1.4.2z" fill="#FFF"/></svg>
-            <span>Phantom</span>
-          </button>
-          
-          <button class="wallet-btn" onclick="connectWallet('generic')" aria-label="Connect other wallet">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg>
-            <span>Other Solana Wallet</span>
-          </button>
-        </div>
-
-        <div id="connecting-state" class="hidden text-center py-8 w-full flex flex-col items-center">
-          <div class="spinner mx-auto mb-4"></div>
-          <p class="text-zinc-400" id="connection-status">Connecting wallet...</p>
-          
-          <!-- Custom RPC Input (Hidden initially) -->
-          <div id="rpc-fallback-ui" class="rpc-input-group hidden">
-            <p class="text-xs text-center" style="color: var(--danger);">Public RPCs blocked. Paste your own (QuickNode/Helius):</p>
-            <input type="text" id="custom-rpc-input" class="rpc-input" placeholder="https://your-rpc-url.com" />
-            <button class="btn-primary w-full" onclick="retryWithCustomRPC()">Retry Connection</button>
+      <!-- Onboarding steps -->
+      <div id="onboarding-steps" class="w-full max-w-md">
+        
+        <!-- Step 1: Welcome -->
+        <div id="step-1" class="onboarding-step animate-slide-up" style="animation-delay: 0.2s;">
+          <div class="pixel-border bg-[var(--bg-card)] p-8 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <span class="font-pixel text-xs" style="color: var(--accent);">01</span>
+              <div class="h-px flex-1" style="background: var(--border);"></div>
+              <span class="font-pixel text-xs" style="color: var(--fg-dim);">03</span>
+            </div>
+            <h2 class="font-pixel text-sm mb-4">Connect Wallet</h2>
+            <p class="text-sm mb-6" style="color: var(--fg-muted);">
+              Link your Solana wallet to verify token holdings and access gated rooms.
+            </p>
+            <button onclick="connectWallet()" class="btn-pixel accent w-full">
+              Connect Phantom
+            </button>
           </div>
         </div>
 
-        <div class="mt-8 p-4 rounded-lg w-full max-w-md text-center" style="background: rgba(0, 229, 191, 0.05); border: 1px solid rgba(0, 229, 191, 0.1);">
-          <div class="security-indicator justify-center">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            <span>We never store your keys. You sign locally.</span>
-          </div>
-        </div>
-
-        <button class="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors block mx-auto" onclick="showScreen('landing-screen')">← Back</button>
-      </div>
-    </div>
-
-    <!-- Screen 3: Verification -->
-    <div id="verification-screen" class="screen flex-col items-center justify-center p-6">
-      <div class="w-full max-w-lg">
-        <div class="card">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-semibold">Verifying Holdings</h2>
-            <div class="security-indicator">
-              <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span>Secured</span>
+        <!-- Step 2: Verifying -->
+        <div id="step-2" class="onboarding-step hidden">
+          <div class="pixel-border bg-[var(--bg-card)] p-8 mb-6">
+            <div class="flex items-center gap-3 mb-6">
+              <span class="font-pixel text-xs" style="color: var(--accent);">02</span>
+              <div class="h-px flex-1" style="background: var(--border);"></div>
+              <span class="font-pixel text-xs" style="color: var(--fg-dim);">03</span>
+            </div>
+            <h2 class="font-pixel text-sm mb-4">Verifying Holdings</h2>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 text-sm">
+                <span id="verify-1" class="w-4 h-4 border-2 border-[var(--fg-dim)]"></span>
+                <span>Checking SPL tokens...</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm">
+                <span id="verify-2" class="w-4 h-4 border-2 border-[var(--fg-dim)]"></span>
+                <span>Scanning NFT collection...</span>
+              </div>
+              <div class="flex items-center gap-3 text-sm">
+                <span id="verify-3" class="w-4 h-4 border-2 border-[var(--fg-dim)]"></span>
+                <span>Building access profile...</span>
+              </div>
             </div>
           </div>
-          <div class="mono text-sm text-zinc-400 mb-6 p-4 rounded-lg overflow-y-auto" style="background: var(--bg); height: 220px;" id="verification-logs"></div>
-          <div id="verification-status" class="text-center py-4">
-            <div class="spinner mx-auto mb-3"></div>
-            <p class="text-zinc-400">Initializing connection...</p>
+        </div>
+
+        <!-- Step 3: Complete -->
+        <div id="step-3" class="onboarding-step hidden">
+          <div class="pixel-border-accent bg-[var(--bg-card)] p-8 mb-6 animate-pulse-glow">
+            <div class="flex items-center gap-3 mb-6">
+              <span class="font-pixel text-xs" style="color: var(--accent);">03</span>
+              <div class="h-px flex-1" style="background: var(--accent);"></div>
+              <span class="font-pixel text-xs" style="color: var(--accent);">03</span>
+            </div>
+            <h2 class="font-pixel text-sm mb-2" style="color: var(--accent);">Access Granted</h2>
+            <p class="text-sm mb-6" style="color: var(--fg-muted);">
+              Wallet verified. You have access to <span id="room-count" style="color: var(--accent);">0</span> token-gated rooms.
+            </p>
+            <div class="flex items-center gap-2 text-xs mb-6" style="color: var(--fg-muted);">
+              <span id="wallet-display" class="font-mono"></span>
+              <button onclick="copyWallet()" class="hover:text-[var(--accent)] transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </button>
+            </div>
+            <button onclick="enterLobby()" class="btn-pixel w-full">
+              Enter Lobby
+            </button>
           </div>
         </div>
+        
+      </div>
+      
+      <!-- Security note -->
+      <div class="text-center mt-8 animate-fade-in" style="animation-delay: 0.5s;">
+        <p class="text-xs flex items-center justify-center gap-2" style="color: var(--fg-dim);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          End-to-end encrypted. No data stored on servers.
+        </p>
       </div>
     </div>
 
-    <!-- Screen 4: Room Selection -->
-    <div id="rooms-screen" class="screen flex-col p-6">
-      <div class="max-w-4xl mx-auto w-full">
-        <div class="flex items-center justify-between mb-8">
-          <div>
-            <h2 class="text-2xl font-semibold">Token Rooms</h2>
-            <p class="text-zinc-400 mt-1">Select a room to join the conversation</p>
+    <!-- VIEW: Room List (Lobby) -->
+    <div id="view-lobby" class="view flex-col min-h-screen">
+      
+      <!-- Header -->
+      <header class="border-b-2 p-4" style="border-color: var(--border); background: var(--bg-elevated);">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+              <rect x="4" y="4" width="40" height="40" fill="none" stroke="var(--accent)" stroke-width="4"/>
+              <rect x="12" y="12" width="8" height="8" fill="var(--accent)"/>
+              <rect x="28" y="12" width="8" height="8" fill="var(--accent)"/>
+              <rect x="12" y="28" width="24" height="4" fill="var(--accent)"/>
+            </svg>
+            <span class="font-pixel text-xs">
+              <span style="color: var(--accent);">tryl</span><span style="color: var(--fg-muted);">.chat</span>
+            </span>
           </div>
           <div class="flex items-center gap-4">
-            <div id="wallet-address" class="mono text-sm px-3 py-2 rounded-lg" style="background: var(--card); border: 1px solid var(--border);"></div>
-            <button class="btn-secondary text-sm py-2 px-4" onclick="disconnectWallet()">Disconnect</button>
+            <span class="text-xs hidden sm:inline" style="color: var(--fg-muted);">
+              <span id="wallet-short" class="font-mono"></span>
+            </span>
+            <button onclick="disconnectWallet()" class="text-xs hover:text-[var(--danger)] transition-colors" style="color: var(--fg-muted);">
+              Disconnect
+            </button>
           </div>
         </div>
-        <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
+      </header>
+
+      <!-- Room list -->
+      <main class="flex-1 p-4 md:p-8">
+        <div class="max-w-4xl mx-auto">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="font-pixel text-sm">Available Rooms</h2>
+            <span class="text-xs" style="color: var(--fg-muted);">
+              <span id="accessible-count">0</span> accessible
+            </span>
+          </div>
+
+          <div id="rooms-grid" class="grid gap-4 md:grid-cols-2">
+            <!-- Rooms injected by JS -->
+          </div>
+        </div>
+      </main>
+
     </div>
 
-    <!-- Screen 5: Chat Room -->
-    <div id="chat-screen" class="screen">
-      <div class="chat-container">
-        <aside class="sidebar">
-          <div class="p-4 border-b" style="border-color: var(--border);">
-            <h3 class="font-semibold" id="current-room-name">General Chat</h3>
-            <div id="current-room-token" class="mt-1"></div>
+    <!-- VIEW: Chat Room -->
+    <div id="view-chat" class="view flex-col h-screen">
+      
+      <!-- Chat Header -->
+      <header class="border-b-2 p-4 flex-shrink-0" style="border-color: var(--border); background: var(--bg-elevated);">
+        <div class="max-w-4xl mx-auto flex items-center gap-4">
+          <button onclick="leaveRoom()" class="hover:text-[var(--accent)] transition-colors" style="color: var(--fg-muted);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <div class="flex-1">
+            <h2 id="chat-room-name" class="font-pixel text-xs"></h2>
+            <p id="chat-room-desc" class="text-xs mt-1" style="color: var(--fg-muted);"></p>
           </div>
-          <div class="flex-1 overflow-y-auto p-4">
-            <h4 class="text-xs uppercase tracking-wider text-zinc-500 mb-3">Channels</h4>
-            <div id="channels-list" class="space-y-1"></div>
+          <div class="flex items-center gap-2 text-xs" style="color: var(--fg-muted);">
+            <span class="status-dot"></span>
+            <span id="online-count">0</span> online
           </div>
-          <div class="p-4 border-t" style="border-color: var(--border);">
-            <div class="security-indicator pulse">
-              <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span>E2E Encrypted</span>
-            </div>
-          </div>
-        </aside>
-        <main class="messages-area">
-          <div class="flex-1 overflow-y-auto" id="messages-container"></div>
-          <div class="message-input-container p-4" style="background: var(--bg-elevated); border-top: 1px solid var(--border);">
-            <div class="flex gap-3">
-              <input type="text" class="message-input flex-1" id="message-input" placeholder="Type a message..." aria-label="Message input" onkeypress="handleMessageKeypress(event)">
-              <button class="btn-primary" onclick="sendMessage()">Send</button>
-            </div>
-          </div>
-        </main>
-      </div>
+        </div>
+      </header>
+
+      <!-- Messages -->
+      <main id="chat-messages" class="flex-1 overflow-y-auto p-4">
+        <div class="max-w-4xl mx-auto space-y-2">
+          <!-- Messages injected by JS -->
+        </div>
+      </main>
+
+      <!-- Input -->
+      <footer class="border-t-2 p-4 flex-shrink-0" style="border-color: var(--border); background: var(--bg-elevated);">
+        <div class="max-w-4xl mx-auto">
+          <form onsubmit="sendMessage(event)" class="flex gap-3">
+            <input 
+              type="text" 
+              id="chat-input"
+              class="input-pixel flex-1" 
+              placeholder="Type a message..."
+              autocomplete="off"
+            >
+            <button type="submit" class="btn-pixel accent px-6">
+              Send
+            </button>
+          </form>
+        </div>
+      </footer>
+
     </div>
+
   </div>
 
   <script>
-    // =====================
-    // Environment Check
-    // =====================
-    (function checkEnvironment() {
-      try {
-        if (window.self !== window.top || window.origin === 'null' || window.origin === 'file://') {
-          document.getElementById('env-warning').style.display = 'block';
-        }
-      } catch (e) {
-        document.getElementById('env-warning').style.display = 'block';
-      }
-    })();
-
-    // =====================
-    // State & Configuration
-    // =====================
+    // =============================================
+    // DATA & STATE
+    // =============================================
+    
     const state = {
-      currentScreen: 'landing-screen',
       wallet: null,
-      connection: null,
-      publicKey: null,
-      userTokens: [],
+      tokens: [],
+      currentView: 'landing',
       currentRoom: null,
-      currentChannel: 'general'
+      messages: {}
     };
 
-    // List of Public RPCs to try (Fallback Strategy)
-    const RPC_ENDPOINTS = [
-      "https://ssc-dao.genesysgo.net", // Often the most reliable public RPC
-      "https://api.mainnet-beta.solana.com", // Official Solana RPC
-      "https://solana-api.projectserum.com" // Serum RPC
+    // Token holdings simulation (what the user "owns")
+    const userTokens = [
+      { mint: 'TRYL', amount: 1500 },
+      { mint: 'BONK', amount: 5000000 },
+      { mint: 'JUP', amount: 25 },
+      { mint: 'WIF', amount: 1000 }
     ];
 
-    // Token Configuration
-    const tokenRooms = [
-      { id: 'general', name: 'General Chat', description: 'Open to all verified wallets', token: null, members: 8429, online: 234, channels: ['general', 'introductions'], unlocked: true },
-      { id: 'solana-defi', name: 'DeFi Alpha', description: 'Exclusive DeFi discussions', token: { symbol: 'USDC', amount: 1, mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' }, members: 1247, online: 89, channels: ['alpha', 'yields'], unlocked: false },
-      { id: 'bonk-gang', name: 'BONK Gang', description: 'For the BONK community', token: { symbol: 'BONK', amount: 1000000, mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' }, members: 892, online: 56, channels: ['bonk-talk', 'meme-war'], unlocked: false },
-      { id: 'wallet-check', name: 'SOL Holders', description: 'Must hold at least 0.01 SOL', token: { symbol: 'SOL', amount: 0.01, mint: 'So11111111111111111111111111111111111111112' }, members: 410, online: 45, channels: ['sol-chat'], unlocked: false }
+    // Available rooms with token requirements
+    const rooms = [
+      {
+        id: 'general',
+        name: 'General',
+        description: 'Open chat for all verified wallets',
+        token: null,
+        amount: 0,
+        members: 1247,
+        online: 89
+      },
+      {
+        id: 'tryl-holders',
+        name: 'TRYL Holders',
+        description: 'Exclusive chat for TRYL token holders',
+        token: 'TRYL',
+        amount: 100,
+        members: 342,
+        online: 28
+      },
+      {
+        id: 'bonk-army',
+        name: 'BONK Army',
+        description: 'For the BONK community',
+        token: 'BONK',
+        amount: 1000000,
+        members: 892,
+        online: 56
+      },
+      {
+        id: 'whale-tank',
+        name: 'Whale Tank',
+        description: 'High-value holders only',
+        token: 'TRYL',
+        amount: 5000,
+        members: 45,
+        online: 12
+      },
+      {
+        id: 'jup-crew',
+        name: 'JUP Crew',
+        description: 'Jupiter exchange enthusiasts',
+        token: 'JUP',
+        amount: 10,
+        members: 567,
+        online: 34
+      },
+      {
+        id: 'wif-gang',
+        name: 'WIF Gang',
+        description: 'dogwifhat community',
+        token: 'WIF',
+        amount: 500,
+        members: 723,
+        online: 41
+      }
     ];
 
-    const sampleMessages = [
-      { user: 'solana_dev', content: 'Just shipped a new feature. Check it out!', time: '2m ago', avatar: 'SD' },
-      { user: 'cryptowhale', content: 'Market looking interesting today.', time: '5m ago', avatar: 'CW' },
-    ];
+    // Simulated chat messages
+    const seedMessages = {
+      'general': [
+        { user: 'solana_dev', text: 'Just deployed a new program on mainnet', time: '14:23' },
+        { user: 'crypto_sarah', text: 'Anyone watching the SOL charts today?', time: '14:25' },
+        { user: 'degen_ape', text: 'Gas fees are super low right now', time: '14:28' }
+      ],
+      'tryl-holders': [
+        { user: 'tryl_whale', text: 'New features dropping soon', time: '13:45' },
+        { user: 'early_adopter', text: 'The token gated system is smooth', time: '13:52' }
+      ],
+      'bonk-army': [
+        { user: 'bonk_master', text: 'BONK to the moon', time: '12:30' },
+        { user: 'degen_420', text: 'Accumulating more every day', time: '12:45' }
+      ],
+      'whale-tank': [
+        { user: 'big_fish', text: 'Market looking bullish for Q4', time: '11:00' },
+        { user: 'alpha_caller', text: 'Some major announcements coming', time: '11:15' }
+      ],
+      'jup-crew': [
+        { user: 'jup_fan', text: 'The new UI is incredible', time: '15:10' },
+        { user: 'swap_king', text: 'Best DEX on Solana hands down', time: '15:12' }
+      ],
+      'wif-gang': [
+        { user: 'wif_dao', text: 'Community keeps growing', time: '10:20' },
+        { user: 'hat_lover', text: 'The memes are too good', time: '10:35' }
+      ]
+    };
 
-    // =====================
-    // UI Logic
-    // =====================
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
-      state.currentScreen = screenId;
+    // Initialize messages
+    rooms.forEach(room => {
+      state.messages[room.id] = [...(seedMessages[room.id] || [])];
+    });
+
+    // =============================================
+    // UTILITIES
+    // =============================================
+
+    function shortenWallet(address) {
+      if (!address) return '';
+      return `${address.slice(0, 4)}...${address.slice(-4)}`;
     }
 
-    function log(text, isAccent = false, isError = false) {
-      const container = document.getElementById('verification-logs');
-      const line = document.createElement('div');
-      line.className = 'mb-1';
-      if (isAccent) line.style.color = 'var(--accent)';
-      if (isError) line.style.color = 'var(--danger)';
-      line.textContent = `> ${text}`;
-      container.appendChild(line);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // =====================
-    // RPC & Connection Logic
-    // =====================
-    async function getValidConnection() {
-      for (const url of RPC_ENDPOINTS) {
-        try {
-          log(`Trying RPC: ${url.split('/')[2]}...`);
-          const conn = new solanaWeb3.Connection(url, "confirmed");
-          // Simple health check
-          await conn.getEpochInfo(); 
-          log("Connection established.", true);
-          return conn;
-        } catch (err) {
-          log(`Failed.`, false, true);
-        }
+    function generateWalletAddress() {
+      const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      let result = '';
+      for (let i = 0; i < 44; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      return null;
+      return result;
     }
 
-    async function retryWithCustomRPC() {
-      const url = document.getElementById('custom-rpc-input').value.trim();
-      if(!url) return;
+    function checkAccess(room) {
+      if (!room.token) return true;
+      const userToken = userTokens.find(t => t.mint === room.token);
+      return userToken && userToken.amount >= room.amount;
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${viewId}`).classList.add('active');
+      state.currentView = viewId;
+    }
+
+    // =============================================
+    // WALLET CONNECTION
+    // =============================================
+
+    function connectWallet() {
+      // Hide step 1, show step 2
+      document.getElementById('step-1').classList.add('hidden');
+      document.getElementById('step-2').classList.remove('hidden');
       
-      document.getElementById('verification-status').innerHTML = `<div class="spinner mx-auto mb-3"></div><p class="text-zinc-400">Retrying with custom RPC...</p>`;
+      // Simulate verification steps
+      setTimeout(() => {
+        document.getElementById('verify-1').innerHTML = '<span style="color: var(--accent);">✓</span>';
+      }, 600);
       
-      try {
-         state.connection = new solanaWeb3.Connection(url, "confirmed");
-         await state.connection.getEpochInfo();
-         log("Custom RPC connected.", true);
-         // Resume verification
-         await fetchTokens();
-      } catch(e) {
-        log("Custom RPC also failed. Check URL.", false, true);
-      }
-    }
-
-    // =====================
-    // Wallet Detection
-    // =====================
-    function getWalletProvider(type) {
-      const standardSolana = window.solana;
-      if (type === 'phantom') {
-        if (window.phantom?.solana) return window.phantom.solana;
-        if (standardSolana?.isPhantom) return standardSolana;
-      }
-      if (type === 'generic') {
-        if (standardSolana) return standardSolana;
-      }
-      return null;
-    }
-
-    async function connectWallet(type) {
-      document.getElementById('wallet-options').classList.add('hidden');
-      document.getElementById('connecting-state').classList.remove('hidden');
-      document.getElementById('rpc-fallback-ui').classList.add('hidden');
+      setTimeout(() => {
+        document.getElementById('verify-2').innerHTML = '<span style="color: var(--accent);">✓</span>';
+      }, 1200);
       
-      try {
-        if (window.origin === 'null') throw new Error("Sandbox environment detected. Please open in a new tab.");
+      setTimeout(() => {
+        document.getElementById('verify-3').innerHTML = '<span style="color: var(--accent);">✓</span>';
         
-        const provider = getWalletProvider(type);
+        // Generate fake wallet
+        state.wallet = generateWalletAddress();
+        state.tokens = userTokens;
         
-        if (!provider) {
-          throw new Error(`${type} wallet not detected.`);
-        }
-
-        document.getElementById('connection-status').textContent = 'Requesting connection...';
+        // Count accessible rooms
+        const accessible = rooms.filter(r => checkAccess(r)).length;
+        document.getElementById('room-count').textContent = accessible;
+        document.getElementById('wallet-display').textContent = shortenWallet(state.wallet);
         
-        await provider.connect();
-        
-        state.wallet = provider;
-        state.publicKey = provider.publicKey;
-
-        document.getElementById('connection-status').textContent = 'Signing message for security...';
-        const message = `Sign this message to verify ownership for tryl.chat.\nNonce: ${Date.now()}`;
-        const encodedMessage = new TextEncoder().encode(message);
-        
-        if (provider.signMessage) {
-           await provider.signMessage(encodedMessage, 'utf8');
-        } else {
-           console.warn("Wallet does not support signMessage.");
-        }
-
-        showScreen('verification-screen');
-        await runVerification();
-
-      } catch (err) {
-        console.error(err);
-        document.getElementById('connection-status').textContent = `Error: ${err.message}`;
-        document.getElementById('connection-status').style.color = 'var(--danger)';
-        
+        // Show step 3
         setTimeout(() => {
-          document.getElementById('wallet-options').classList.remove('hidden');
-          document.getElementById('connecting-state').classList.add('hidden');
-          document.getElementById('connection-status').style.color = 'var(--fg)';
-        }, 4000);
-      }
+          document.getElementById('step-2').classList.add('hidden');
+          document.getElementById('step-3').classList.remove('hidden');
+        }, 400);
+        
+      }, 1800);
     }
 
     function disconnectWallet() {
-      if (state.wallet && state.wallet.disconnect) {
-        state.wallet.disconnect();
-      }
       state.wallet = null;
-      state.publicKey = null;
-      state.userTokens = [];
-      showScreen('landing-screen');
+      state.tokens = [];
+      state.currentRoom = null;
+      
+      // Reset onboarding
+      document.getElementById('step-3').classList.add('hidden');
+      document.getElementById('step-2').classList.add('hidden');
+      document.getElementById('step-1').classList.remove('hidden');
+      
+      // Reset verification checkmarks
+      ['verify-1', 'verify-2', 'verify-3'].forEach(id => {
+        document.getElementById(id).innerHTML = '';
+        document.getElementById(id).className = 'w-4 h-4 border-2 border-[var(--fg-dim)]';
+      });
+      
+      showView('landing');
     }
 
-    // =====================
-    // Blockchain Verification
-    // =====================
-    async function runVerification() {
-      const container = document.getElementById('verification-logs');
-      container.innerHTML = '';
-      document.getElementById('verification-status').innerHTML = `<div class="spinner mx-auto mb-3"></div><p class="text-zinc-400">Connecting to network...</p>`;
-
-      try {
-        log('Initializing secure connection...');
-        log(`Wallet: ${state.publicKey.toBase58().slice(0, 8)}...`);
-        
-        // Try to find a working RPC
-        state.connection = await getValidConnection();
-        
-        if (!state.connection) {
-          throw new Error("All public RPCs blocked by network.");
-        }
-
-        await fetchTokens();
-
-      } catch (err) {
-        console.error(err);
-        log(`Error: ${err.message}`, false, true);
-        
-        // Show Custom RPC UI
-        const statusEl = document.getElementById('verification-status');
-        statusEl.innerHTML = `
-          <div class="text-center">
-            <p class="mb-2" style="color: var(--danger);">Network Blocked.</p>
-            <p class="text-xs text-zinc-400 mb-4">Public nodes are denying access. Please use a custom RPC URL (QuickNode/Alchemy/Helius) or disable AdBlock/VPN.</p>
-          </div>
-        `;
-        document.getElementById('rpc-fallback-ui').classList.remove('hidden');
+    function copyWallet() {
+      if (state.wallet) {
+        navigator.clipboard.writeText(state.wallet);
+        // Could add a toast notification here
       }
     }
 
-    async function fetchTokens() {
-      log('Fetching token accounts...');
-        
-      const tokenAccounts = await state.connection.getParsedTokenAccountsByOwner(
-        state.publicKey,
-        { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
-      );
+    // =============================================
+    // LOBBY / ROOM LIST
+    // =============================================
 
-      log(`Found ${tokenAccounts.value.length} token accounts.`);
-      
-      state.userTokens = tokenAccounts.value.map(acc => {
-        const info = acc.account.data.parsed.info;
-        return { mint: info.mint, amount: info.tokenAmount.uiAmount };
-      });
-
-      const solBalance = await state.connection.getBalance(state.publicKey);
-      const solLamports = solBalance / solanaWeb3.LAMPORTS_PER_SOL;
-      log(`SOL Balance: ${solLamports.toFixed(4)}`);
-      
-      state.userTokens.push({
-          mint: 'So11111111111111111111111111111111111111112',
-          amount: solLamports
-      });
-
-      log('Cross-referencing room requirements...');
-      
-      tokenRooms.forEach(room => {
-          if(!room.token) return; 
-          const userHolding = state.userTokens.find(t => t.mint === room.token.mint);
-          if(userHolding && userHolding.amount >= room.token.amount) {
-              room.unlocked = true;
-              log(`Access Granted: ${room.name}`, true);
-          } else {
-              room.unlocked = false;
-              log(`Access Denied: ${room.name}`);
-          }
-      });
-
-      log('Verification Complete.', true);
-
-      await new Promise(r => setTimeout(r, 1000));
-      
-      document.getElementById('wallet-address').textContent = truncateAddress(state.publicKey.toBase58());
-      showScreen('rooms-screen');
+    function enterLobby() {
+      showView('lobby');
+      document.getElementById('wallet-short').textContent = shortenWallet(state.wallet);
       renderRooms();
     }
 
-    // =====================
-    // Render Functions
-    // =====================
-    function truncateAddress(addr) { return addr.slice(0, 4) + '...' + addr.slice(-4); }
-
     function renderRooms() {
       const grid = document.getElementById('rooms-grid');
-      grid.innerHTML = '';
-      tokenRooms.forEach((room, i) => {
-        const card = document.createElement('div');
-        card.className = `card room-card ${!room.unlocked ? 'locked' : ''} animate-in`;
-        card.style.animationDelay = `${i * 0.1}s`;
-        
-        let tokenBadge = '';
-        if(room.token) {
-           tokenBadge = `<span class="token-badge ${!room.unlocked ? 'required' : ''}">${!room.unlocked ? '🔒' : '✓'} ${room.token.amount} ${room.token.symbol}</span>`;
-        } else {
-           tokenBadge = `<span class="token-badge">✓ Open Access</span>`;
-        }
-
-        card.innerHTML = `
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold" style="background: ${room.unlocked ? 'rgba(0, 229, 191, 0.1)' : 'rgba(255, 71, 87, 0.1)'}; color: ${room.unlocked ? 'var(--accent)' : 'var(--danger)'}">
-              ${room.name.charAt(0)}
+      const accessibleCount = rooms.filter(r => checkAccess(r)).length;
+      document.getElementById('accessible-count').textContent = accessibleCount;
+      
+      grid.innerHTML = rooms.map((room, index) => {
+        const hasAccess = checkAccess(room);
+        return `
+          <div 
+            class="room-card ${hasAccess ? '' : 'locked'}"
+            onclick="${hasAccess ? `enterRoom('${room.id}')` : `showLockedMessage('${room.token}', '${room.amount}')`}"
+            style="animation: slideUp 0.3s ease-out forwards; animation-delay: ${index * 0.05}s; opacity: 0;"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h3 class="font-pixel text-xs mb-1">${room.name}</h3>
+                ${room.token ? `
+                  <span class="text-xs font-mono px-2 py-1 inline-block mt-1" style="background: var(--bg); color: ${hasAccess ? 'var(--accent)' : 'var(--fg-muted)'};">
+                    ${hasAccess ? 'ACCESS' : `LOCKED`}
+                  </span>
+                ` : `
+                  <span class="text-xs font-mono px-2 py-1 inline-block mt-1" style="background: var(--bg); color: var(--fg-muted);">
+                    PUBLIC
+                  </span>
+                `}
+              </div>
+              ${!hasAccess ? `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              ` : ''}
             </div>
-            ${tokenBadge}
-          </div>
-          <h3 class="font-semibold text-lg mb-1">${room.name}</h3>
-          <p class="text-sm text-zinc-400 mb-4">${room.description}</p>
-          <div class="flex items-center gap-4 text-sm text-zinc-500">
-            <span>${room.members.toLocaleString()} members</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span>${room.online} online</span>
+            <p class="text-xs mb-4" style="color: var(--fg-muted);">${room.description}</p>
+            ${room.token ? `
+              <p class="text-xs mb-4" style="color: var(--fg-dim);">
+                Requires: ${room.amount.toLocaleString()} ${room.token}
+              </p>
+            ` : ''}
+            <div class="flex items-center gap-4 text-xs" style="color: var(--fg-dim);">
+              <span>${room.members} members</span>
+              <span class="flex items-center gap-1">
+                <span class="status-dot" style="width: 6px; height: 6px;"></span>
+                ${room.online} online
+              </span>
+            </div>
           </div>
         `;
-
-        if (room.unlocked) card.onclick = () => enterRoom(room);
-        else card.onclick = () => alert(`You need ${room.token.amount} ${room.token.symbol} to join this room.`);
-        
-        grid.appendChild(card);
-      });
+      }).join('');
     }
 
-    function enterRoom(room) {
+    function showLockedMessage(token, amount) {
+      alert(`You need at least ${amount} ${token} to access this room.`);
+    }
+
+    // =============================================
+    // CHAT ROOM
+    // =============================================
+
+    function enterRoom(roomId) {
+      const room = rooms.find(r => r.id === roomId);
+      if (!room || !checkAccess(room)) return;
+      
       state.currentRoom = room;
-      document.getElementById('current-room-name').textContent = room.name;
-      document.getElementById('current-room-token').innerHTML = room.token ? `<span class="token-badge">${room.token.symbol} verified</span>` : '';
-      renderChannels(room.channels);
+      
+      // Update header
+      document.getElementById('chat-room-name').textContent = room.name;
+      document.getElementById('chat-room-desc').textContent = room.description;
+      document.getElementById('online-count').textContent = room.online;
+      
+      // Render messages
       renderMessages();
-      showScreen('chat-screen');
+      
+      showView('chat');
+      
+      // Focus input
+      setTimeout(() => {
+        document.getElementById('chat-input').focus();
+      }, 100);
     }
 
-    function renderChannels(channels) {
-      document.getElementById('channels-list').innerHTML = channels.map(c => `
-        <button class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${c === state.currentChannel ? 'text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}" style="${c === state.currentChannel ? 'background: var(--card);' : ''}" onclick="selectChannel('${c}')"># ${c}</button>
-      `).join('');
+    function leaveRoom() {
+      state.currentRoom = null;
+      showView('lobby');
     }
-
-    function selectChannel(channel) { state.currentChannel = channel; renderChannels(state.currentRoom.channels); }
 
     function renderMessages() {
-      document.getElementById('messages-container').innerHTML = sampleMessages.map((m, i) => `
-        <div class="message animate-in" style="animation-delay: ${i*0.05}s">
-          <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0" style="background: linear-gradient(135deg, var(--card) 0%, var(--border) 100%);">${m.avatar}</div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-baseline gap-2"><span class="font-medium">${m.user}</span><span class="text-xs text-zinc-500">${m.time}</span></div>
-              <p class="mt-1 text-zinc-300">${m.content}</p>
+      const container = document.getElementById('chat-messages').querySelector('.space-y-2');
+      const messages = state.messages[state.currentRoom.id] || [];
+      
+      container.innerHTML = messages.map((msg, index) => {
+        const isOwn = msg.user === 'you';
+        return `
+          <div 
+            class="chat-bubble ${isOwn ? 'own' : ''}"
+            style="animation: slideUp 0.2s ease-out forwards; animation-delay: ${index * 0.03}s; opacity: 0;"
+          >
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-mono" style="color: ${isOwn ? 'var(--accent)' : 'var(--fg)'};">${msg.user}</span>
+              <span class="text-xs" style="color: var(--fg-dim);">${msg.time}</span>
             </div>
+            <p class="text-sm" style="color: var(--fg);">${msg.text}</p>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+      
+      // Scroll to bottom
+      const scrollContainer = document.getElementById('chat-messages');
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
 
-    function sendMessage() {
-      const input = document.getElementById('message-input');
-      if (!input.value.trim()) return;
-      const container = document.getElementById('messages-container');
-      const msg = document.createElement('div');
-      msg.className = 'message animate-in';
-      msg.innerHTML = `
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0" style="background: var(--accent); color: var(--bg);">ME</div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-baseline gap-2"><span class="font-medium" style="color: var(--accent);">you</span><span class="text-xs text-zinc-500">just now</span></div>
-            <p class="mt-1 text-zinc-300">${input.value}</p>
-          </div>
-        </div>`;
-      container.appendChild(msg);
-      container.scrollTop = container.scrollHeight;
+    function sendMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      
+      if (!text || !state.currentRoom) return;
+      
+      const now = new Date();
+      const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      state.messages[state.currentRoom.id].push({
+        user: 'you',
+        text: text,
+        time: time
+      });
+      
       input.value = '';
+      renderMessages();
+      
+      // Simulate a response
+      simulateResponse();
     }
 
-    function handleMessageKeypress(e) { if (e.key === 'Enter') sendMessage(); }
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if(state.currentScreen === 'chat-screen') showScreen('rooms-screen'); else if(state.currentScreen !== 'landing-screen') disconnectWallet(); } });
+    function simulateResponse() {
+      const responses = [
+        'Interesting point!',
+        'Agreed, the ecosystem is growing fast.',
+        'Has anyone checked the latest governance proposal?',
+        'The tokenomics look solid.',
+        'Bullish on this project long term.',
+        'Just added more to my position.',
+        'The community here is great.'
+      ];
+      
+      const users = ['sol_trader', 'degen_master', 'crypto_ninja', 'blockchain_dev', 'alpha_hunter'];
+      
+      setTimeout(() => {
+        if (!state.currentRoom) return;
+        
+        const now = new Date();
+        const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        state.messages[state.currentRoom.id].push({
+          user: users[Math.floor(Math.random() * users.length)],
+          text: responses[Math.floor(Math.random() * responses.length)],
+          time: time
+        });
+        
+        renderMessages();
+      }, 1500 + Math.random() * 2000);
+    }
+
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+
+    // Handle browser back button
+    window.addEventListener('popstate', () => {
+      if (state.currentView === 'chat') {
+        leaveRoom();
+      } else if (state.currentView === 'lobby') {
+        disconnectWallet();
+      }
+    });
+
+    // Push state when entering views
+    const originalEnterRoom = enterRoom;
+    enterRoom = function(roomId) {
+      history.pushState({ view: 'chat', room: roomId }, '');
+      originalEnterRoom(roomId);
+    };
+
+    const originalEnterLobby = enterLobby;
+    enterLobby = function() {
+      history.pushState({ view: 'lobby' }, '');
+      originalEnterLobby();
+    };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (state.currentView === 'chat') {
+          leaveRoom();
+        }
+      }
+    });
+
+    console.log('%c tryl.chat ', 'background: #00ff88; color: #000; font-family: monospace; font-size: 16px; padding: 4px 8px;');
+    console.log('%c Token-gated chat on Solana ', 'color: #666; font-family: monospace;');
   </script>
 </body>
 </html>
