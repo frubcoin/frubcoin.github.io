@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Spotify Status</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .widget { background: #181818; padding: 20px; border-radius: 12px; width: 320px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .art { width: 80px; height: 80px; border-radius: 8px; background: #282828; object-fit: cover; }
+        .info { flex: 1; overflow: hidden; }
+        .song { font-weight: bold; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .artist { color: #b3b3b3; font-size: 0.9em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; margin-top: 4px; }
+        .status { font-size: 10px; color: #1db954; margin-top: 8px; display: flex; align-items: center; gap: 5px; }
+        .dot { width: 6px; height: 6px; background: #1db954; border-radius: 50%; animation: blink 2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="widget">
+        <img id="album-art" class="art" src="https://via.placeholder.com/80" alt="Album Art">
+        <div class="info">
+            <div class="song" id="song-name">Waiting for connection...</div>
+            <div class="artist" id="artist-name">-</div>
+            <div class="status">
+                <div class="dot"></div> <span>LIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CHANGE THIS TO YOUR VPS IP ADDRESS
+        const VPS_SOCKET_URL = "https://204.44.101.219:3000";
+
+        const socket = io(VPS_SOCKET_URL);
+        
+        const artEl = document.getElementById('album-art');
+        const songEl = document.getElementById('song-name');
+        const artistEl = document.getElementById('artist-name');
+
+        socket.on('spotify_update', (data) => {
+            if (data.isPlaying) {
+                artEl.src = data.albumArt;
+                songEl.textContent = data.song;
+                artistEl.textContent = data.artist;
+            } else {
+                artEl.src = "https://via.placeholder.com/80";
+                songEl.textContent = "Not Playing";
+                artistEl.textContent = "-";
+            }
+        });
+    </script>
+</body>
+</html>
