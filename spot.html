@@ -1,303 +1,291 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Now Playing</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            background-color: #000000; /* Pure black background */
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.css">
+
+<script>
+    class FrubMusicPlayer extends HTMLElement {
+        constructor() {
+            super();
+            this.attachShadow({ mode: 'open' });
+            this.isPlaying = false;
+            this.currentTrackId = "";
+            this.duration = 0;
+            this.progressMs = 0;
+            this.lastSync = 0;
         }
 
-        /* --- Card Container --- */
-        .card {
-            width: 340px; /* Fixed width */
-            background: #121212; /* Dark gray card */
-            border-radius: 12px;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        connectedCallback() {
+            this.render();
+            this.initSocket();
+            this.startInterpolation();
         }
 
-        /* --- Album Art --- */
-        .artwork-wrapper {
-            width: 300px; /* Standard fixed size */
-            height: 300px; /* Standard fixed size */
-            margin-bottom: 20px;
-        }
-
-        .artwork {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-            background: #282828;
-            display: block; /* Removes bottom spacing */
-        }
-
-        /* --- Text Info --- */
-        .info {
-            width: 300px; /* Match image width */
-            text-align: left;
-            margin-bottom: 10px;
-        }
-
-        .title {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0 0 4px 0;
-            color: #ffffff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .artist {
-            font-size: 14px;
-            margin: 0;
-            color: #a0a0a0; /* Slightly gray artist name */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* --- Progress Bar --- */
-        .progress-wrapper {
-            width: 300px;
-            margin-bottom: 20px;
-        }
-
-        .bar-bg {
-            width: 100%;
-            height: 4px;
-            background: #4d4d4d;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            background: #1db954; /* Spotify Green */
-            width: 0%;
-            border-radius: 2px;
-        }
-
-        .times {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-            font-size: 12px;
-            color: #a0a0a0;
-        }
-
-        /* --- Footer Status --- */
-        .footer {
-            width: 300px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid #282828;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #eb4034; /* Red by default */
-        }
-
-        .dot.live {
-            background: #1db954;
-            box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; }
-        }
-
-        /* --- Offline State --- */
-        .hidden { display: none !important; }
-        
-        .offline-screen {
-            text-align: center;
-            padding: 40px 0;
-        }
-
-        .offline-text {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #a0a0a0;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        
-        <!-- Playing State -->
-        <div id="playing-view">
-            <div class="artwork-wrapper">
-                <img id="art" class="artwork" src="https://via.placeholder.com/300" alt="Album">
-            </div>
-            
-            <div class="info">
-                <h1 id="title" class="title">Waiting...</h1>
-                <p id="artist" class="artist">-</p>
-            </div>
-            
-            <div class="progress-wrapper">
-                <div class="bar-bg">
-                    <div id="bar" class="bar-fill"></div>
-                </div>
-                <div class="times">
-                    <span id="cur">0:00</span>
-                    <span id="tot">0:00</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Offline State -->
-        <div id="offline-view" class="offline-screen hidden">
-            <svg width="50" height="50" viewBox="0 0 24 24" fill="#606060">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-            </svg>
-            <div class="offline-text">
-                <span style="color: white; font-weight: bold;">frub is not listening to music :(</span>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <div class="status-badge">
-                <div id="status-dot" class="dot"></div>
-                <span id="status-text" style="color: #eb4034;">Offline</span>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const URL = "https://metadata-cult-shades-out.trycloudflare.com";
-        const socket = io(URL);
-
-        // Elements
-        const viewPlaying = document.getElementById('playing-view');
-        const viewOffline = document.getElementById('offline-view');
-        const artEl = document.getElementById('art');
-        const titleEl = document.getElementById('title');
-        const artistEl = document.getElementById('artist');
-        const barEl = document.getElementById('bar');
-        const curEl = document.getElementById('cur');
-        const totEl = document.getElementById('tot');
-        const dotEl = document.getElementById('status-dot');
-        const textEl = document.getElementById('status-text');
-
-        // Logic
-        let playing = false;
-        let duration = 0;
-        let progress = 0;
-        let lastTime = 0;
-
-        // Format time helper
-        const fmt = (ms) => {
+        fmt(ms) {
+            if (ms < 0) ms = 0;
             let s = Math.floor(ms / 1000);
             let m = Math.floor(s / 60);
             s = s % 60;
             return `${m}:${s < 10 ? '0' : ''}${s}`;
-        };
+        }
 
-        // Local animation loop (runs every 16ms for smoothness)
-        setInterval(() => {
-            if (playing) {
-                let passed = Date.now() - lastTime;
-                let current = progress + passed;
-                
-                if (current > duration) current = duration;
-                
-                let pct = (current / duration) * 100;
-                barEl.style.width = `${pct}%`;
-                curEl.textContent = fmt(current);
+        initSocket() {
+            const socket = io("https://metadata-cult-shades-out.trycloudflare.com");
+            socket.on('spotify_update', (data) => {
+                const content = this.shadowRoot.getElementById('content-layer');
+                const offline = this.shadowRoot.getElementById('offline-content');
+                const trackInner = this.shadowRoot.getElementById('track-inner');
+
+                if (data && data.isPlaying) {
+                    const newTrackId = `${data.song}-${data.artist}`;
+                    if (this.currentTrackId !== newTrackId && this.isPlaying) {
+                        trackInner.classList.remove('track-swap-in');
+                        trackInner.classList.add('track-swap-out');
+                        setTimeout(() => {
+                            this.updateMetadata(data);
+                            trackInner.classList.remove('track-swap-out');
+                            trackInner.classList.add('track-swap-in');
+                        }, 300);
+                    } else {
+                        this.updateMetadata(data);
+                    }
+                    this.currentTrackId = newTrackId;
+                    this.isPlaying = true;
+                    content.classList.add('active');
+                    offline.classList.remove('active');
+                } else {
+                    this.isPlaying = false;
+                    content.classList.remove('active');
+                    offline.classList.add('active');
+                }
+            });
+        }
+
+        updateMetadata(data) {
+            this.shadowRoot.getElementById('title').textContent = data.song;
+            this.shadowRoot.getElementById('artist').textContent = data.artist;
+            this.shadowRoot.getElementById('art').src = data.albumArt || '';
+            this.shadowRoot.getElementById('tot').textContent = this.fmt(data.duration);
+            this.duration = data.duration;
+            this.progressMs = data.progress;
+            this.lastSync = Date.now();
+
+            // Only check overflow if the song actually changed
+            const songId = `${data.song}-${data.artist}`;
+            if (this.lastSongId !== songId) {
+                this.lastSongId = songId;
+                requestAnimationFrame(() => this.checkTitleOverflow());
             }
-        }, 16);
+        }
 
-        // Set status indicator
-        const setStatus = (isLive) => {
-            if (isLive) {
-                dotEl.classList.add('live');
-                textEl.style.color = "#1db954";
-                textEl.textContent = "LIVE";
-            } else {
-                dotEl.classList.remove('live');
-                textEl.style.color = "#eb4034";
-                textEl.textContent = "OFFLINE";
+        checkTitleOverflow() {
+            const title = this.shadowRoot.getElementById('title');
+            const container = this.shadowRoot.getElementById('title-container');
+
+            if (!title || !container) return;
+
+            // Reset state
+            const clones = container.querySelectorAll('.title-clone');
+            clones.forEach(c => c.remove());
+            title.getAnimations().forEach(anim => anim.cancel());
+            title.style.transform = '';
+            container.style.display = 'block';
+            container.style.mask = 'none';
+            container.style.webkitMask = 'none';
+
+            // Check for overflow
+            if (title.scrollWidth > container.clientWidth) {
+                // Setup scrolling
+                container.style.display = 'flex';
+                container.style.gap = '20px';
+                container.style.mask = 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)';
+                container.style.webkitMask = 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)';
+
+                const clone = title.cloneNode(true);
+                clone.classList.add('title-clone');
+                clone.removeAttribute('id'); // Avoid duplicate IDs
+
+                // Prevent flex shrinking from messing up width calculations
+                title.style.flexShrink = '0';
+                clone.style.flexShrink = '0';
+
+                container.appendChild(clone);
+
+                const distance = title.scrollWidth + 20; // width + gap
+                const duration = distance * 30; // 30ms per pixel
+
+                const keyframes = [
+                    { transform: 'translateX(0)' },
+                    { transform: `translateX(-${distance}px)` }
+                ];
+
+                const options = {
+                    duration: duration,
+                    iterations: Infinity,
+                    easing: 'linear'
+                };
+
+                title.animate(keyframes, options);
+                clone.animate(keyframes, options);
             }
-        };
+        }
 
-        // Socket events
-        socket.on('connect', () => console.log("Connected"));
-        
-        socket.on('disconnect', () => {
-            setStatus(false);
-            viewPlaying.classList.add('hidden');
-            viewOffline.classList.remove('hidden');
-            playing = false;
-        });
+        startInterpolation() {
+            const update = () => {
+                if (this.isPlaying && this.duration > 0) {
+                    const barEl = this.shadowRoot.getElementById('bar');
+                    const curEl = this.shadowRoot.getElementById('cur');
+                    const now = Date.now();
+                    const currentPos = Math.min(this.progressMs + (now - this.lastSync), this.duration);
+                    if (barEl) barEl.style.width = `${(currentPos / this.duration) * 100}%`;
+                    if (curEl) curEl.textContent = this.fmt(currentPos);
+                }
+                requestAnimationFrame(update);
+            };
+            requestAnimationFrame(update);
+        }
 
-        socket.on('spotify_update', (data) => {
-            // Update text strictly
-            titleEl.textContent = data.song;
-            artistEl.textContent = data.artist;
+        render() {
+            const spotifyLogoBase64 = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+DQo8IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPg0KPHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIj4NCiAgICANCiAgICA8dGl0bGU+U3BvdGlmeS1jb2xvcjwvdGl0bGU+DQogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+DQogICAgPGRlZnM+DQoNCjwvZGVmcz4NCiAgICA8ZyBpZD0iSWNvbnMiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPg0KICAgICAgICA8ZyBpZD0iQ29sb3ItIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjAwLjAwMDAwMCwgLTQ2MC4wMDAwMDApIiBmaWxsPSIjMDBEQTVBIj4NCiAgICAgICAgICAgIDxwYXRoIGQ9Ik0yMzguMTYsNDgxLjM2IEMyMzAuNDgsNDc2LjggMjE3LjY0LDQ3Ni4zMiAyMTAuMzIsNDc4LjYgQzIwOS4xMiw0NzguOTYgMjA3LjkyLDQ3OC4yNCAyMDcuNTYsNDc3LjE2IEMyMDcuMiw0NzUuOTYgMjA3LjkyLDQ3NC43NiAyMDksNDc0LjQgQzIxNy41Miw0NzEuODggMjMxLjU2LDQ3Mi4zNiAyNDAuNDQsNDc3LjY0IEMyNDEuNTIsNDc4LjI0IDI0MS44OCw0NzkuNjggMjQxLjI4LDQ4MC43NiBDMjQwLjY4LDQ4MS42IDIzOS4yNCw0ODEuOTYgMjM4LjE2LDQ4MS4zNiBNMjM3LjkyLDQ4OC4wOCBDMjM3LjMyLDQ4OC45MiAyMzYuMjQsNDg5LjI4IDIzNS40LDQ4OC42OCBDMjI4LjkyLDQ4NC43MiAyMTkuMDgsNDgzLjUyIDIxMS41Miw0ODUuOTIgQzIxMC41Niw0ODYuMTYgMjA5LjQ4LDQ4NS42OCAyMDkuMjQsNDg0LjcyIEMyMDksNDgzLjc2IDIwOS40OCw0ODIuNjggMjEwLjQ0LDQ4Mi40NCBDMjE5LjIsNDc5LjggMjMwLDQ4MS4xMiAyMzcuNDQsNDg1LjY4IEMyMzguMTYsNDg2LjA0IDIzOC41Miw0ODcuMjQgMjM3LjkyLDQ4OC4wOCBNMjM1LjA0LDQ5NC42OCBDMjM0LjU2LDQ5NS40IDIzMy43Miw0OTUuNjQgMjMzLDQ5NS4xNiBDMjI3LjM2LDQ5MS42OCAyMjAuMjgsNDkwLjk2IDIxMS44OCw0OTIuODggQzIxMS4wNCw0OTMuMTIgMjEwLjMyLDQ5Mi41MiAyMTAuMDgsNDkxLjggQzIwOS44NCw0OTAuOTYgMjEwLjQ0LDQ5MC4yNCAyMTEuMTYsNDkwIEMyMjAuMjgsNDg3Ljk2IDIyOC4yLDQ4OC44IDIzNC40NCw0OTIuNjQgQzIzNS4yOCw0OTMgMjM1LjQsNDkzLjk2IDIzNS4wNCw0OTQuNjggTTIyNCw0NjAgQzIxMC44LDQ2MCAyMDAsNDcwLjggMjAwLDQ4NCBDMjAwLDQ5Ny4yIDIxMC44LDUwOCAyMjQsNTA4IEMyMzcuMiw1MDggMjQ4LDQ5Ny4yIDI0OCw0ODQgQzI0OCw0NzAuOCAyMzcuMzIsNDYwIDIyNCw0NjAiIGlkPSJTcG90aWZ5Ij4NCg0KPC9wYXRoPg0KICAgICAgICA8L2c+DQogICAgPC9nPg0KPC9zdmc+";
+
+            this.shadowRoot.innerHTML = `
+        <style>
+            :host { 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                min-height: 100vh;
+                font-family: 'Geist Sans', sans-serif; 
+                background: #050505;
+                margin: 0;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+
+            .player-card {
+                position: relative;
+                width: 100%;
+                max-width: 380px; /* Maintains original feel but allows shrinking */
+                aspect-ratio: 38 / 52; /* Keeps the portrait proportions consistent */
+                background: rgba(12, 12, 12, 0.7);
+                border-radius: clamp(20px, 8vw, 40px);
+                box-shadow: -20px 40px 100px rgba(0, 0, 0, 0.9);
+                overflow: hidden;
+                color: #ffffff;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-top: 1px solid rgba(255, 255, 255, 0.25);
+                border-right: 1px solid rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(40px) saturate(160%);
+                -webkit-backdrop-filter: blur(40px) saturate(160%);
+                box-sizing: border-box;
+                isolation: isolate;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .mesh-container { position: absolute; inset: 0; filter: blur(60px); z-index: 1; opacity: 0.5; }
+            .blob { position: absolute; width: 80%; height: 60%; border-radius: 50%; animation: move 20s infinite alternate ease-in-out; }
+            .blob-1 { top: -10%; left: -10%; background: #1db954; opacity: 0.3; }
+            .blob-2 { bottom: -10%; right: -10%; background: #0b4d23; opacity: 0.3; animation-delay: -5s; }
+            .blob-3 { top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1e3a1e; width: 100%; height: 80%; opacity: 0.15; }
+
+            @keyframes move { from { transform: translate(0,0) rotate(0deg); } to { transform: translate(10%, 15%) rotate(90deg); } }
+
+            .noise-overlay {
+                position: absolute; inset: 0; z-index: 3;
+                opacity: 0.08; pointer-events: none;
+                filter: url(#noiseFilter);
+            }
+
+            .watermark-container { position: absolute; inset: 0; pointer-events: none; z-index: 2; overflow: hidden; }
+            .spotify-logo-bg {
+                position: absolute; width: 150%; top: -8%; right: 10%; 
+                opacity: 0.08; filter: grayscale(1) brightness(2); transform: rotate(-15deg);
+            }
+
+            .state-layer {
+                position: absolute; inset: 0; 
+                padding: 8.5%; /* Fluid padding relative to width */
+                display: flex; flex-direction: column;
+                justify-content: center;
+                z-index: 5; box-sizing: border-box;
+                opacity: 0; transform: translateY(10px);
+                transition: opacity 0.6s ease, transform 0.6s ease;
+                pointer-events: none;
+            }
+            .state-layer.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+            #track-inner { width: 100%; transition: opacity 0.3s ease; display: flex; flex-direction: column; }
+            .track-swap-out { opacity: 0; }
+            .track-swap-in { opacity: 1; }
+
+            .artwork {
+                width: 100%; aspect-ratio: 1/1; border-radius: 7%; 
+                object-fit: cover; margin-bottom: 8%;
+                border: 1px solid rgba(255,255,255,0.08);
+            }
+
+            .info { width: 100%; margin-bottom: 6%; text-align: left; }
+            #title-container { width: 100%; overflow: hidden; white-space: nowrap; position: relative; }
+            .title { font-size: clamp(18px, 6.8vw, 26px); font-weight: 800; margin: 0; letter-spacing: -1px; white-space: nowrap; }
+            .artist { font-size: clamp(14px, 4.5vw, 17px); font-weight: 500; color: rgba(255,255,255,0.5); margin: 2% 0 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+            .progress-container { width: 100%; }
+            .bar-bg { width: 100%; height: clamp(4px, 1.5vw, 6px); background: rgba(255, 255, 255, 0.1); border-radius: 10px; position: relative; }
+            .bar-fill { height: 100%; background: #1db954; width: 0%; border-radius: 10px; position: relative; }
+            .playhead { 
+                position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+                width: clamp(10px, 3.5vw, 14px); height: clamp(10px, 3.5vw, 14px); background: #fff; border-radius: 50%; 
+            }
+            .times { display: flex; justify-content: space-between; margin-top: 4%; font-size: clamp(10px, 3vw, 12px); font-weight: 800; color: rgba(255,255,255,0.4); font-variant-numeric: tabular-nums; }
+
+            .offline-msg { text-align: center; }
+            .offline-msg h2 { font-size: clamp(10px, 3.2vw, 12px); letter-spacing: 0.4em; color: rgba(255,255,255,0.2); margin: 0;}
+        </style>
+
+        <svg style="display:none;"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" stitchTiles="stitch" /></filter></svg>
+
+        <div class="player-card">
+            <div class="mesh-container">
+                <div class="blob blob-1"></div>
+                <div class="blob blob-2"></div>
+                <div class="blob blob-3"></div>
+            </div>
             
-            // Update image
-            artEl.src = data.albumArt || 'https://via.placeholder.com/300';
-            
-            // Update duration
-            duration = data.duration;
-            totEl.textContent = fmt(duration);
+            <div class="noise-overlay"></div>
+            <div class="watermark-container">
+                <img src="data:image/svg+xml;base64,${spotifyLogoBase64}" class="spotify-logo-bg" alt="Spotify Logo">
+            </div>
 
-            if (data.isPlaying) {
-                playing = true;
-                progress = data.progress;
-                lastTime = Date.now();
+            <div id="content-layer" class="state-layer">
+                <div id="track-inner">
+                    <img id="art" class="artwork" src="">
+                    <div class="info">
+                        <div id="title-container"><h1 id="title" class="title"></h1></div>
+                        <p id="artist" class="artist"></p>
+                    </div>
+                </div>
+                <div class="progress-container">
+                    <div class="bar-bg">
+                        <div id="bar" class="bar-fill">
+                            <div class="playhead"></div>
+                        </div>
+                    </div>
+                    <div class="times">
+                        <span id="cur">0:00</span>
+                        <span id="tot">0:00</span>
+                    </div>
+                </div>
+            </div>
 
-                // Switch views
-                viewPlaying.classList.remove('hidden');
-                viewOffline.classList.add('hidden');
-                setStatus(true);
+            <div id="offline-content" class="state-layer active">
+                <div class="offline-msg">
+                    <h2>FRUB IS OFFLINE</h2>
+                </div>
+            </div>
+        </div>
+        `;
+        }
+    }
+    customElements.define('frub-player', FrubMusicPlayer);
+</script>
 
-                // Instant visual update
-                barEl.style.width = `${(progress/duration)*100}%`;
-                curEl.textContent = fmt(progress);
-
-            } else {
-                playing = false;
-                viewPlaying.classList.add('hidden');
-                viewOffline.classList.remove('hidden');
-                setStatus(false);
-            }
-        });
-    </script>
-</body>
-</html>
+<frub-player></frub-player>
