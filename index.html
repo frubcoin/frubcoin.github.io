@@ -127,10 +127,10 @@
                     
                         <!-- hCaptcha -->
                         <div class="form-group" style="text-align: center; margin-bottom: 20px;">
-                          <div class="h-captcha" data-sitekey="98809664-253c-40a8-9cb4-79c811ea2e14" data-callback="onCaptchaSuccess"></div>
+                          <div class="h-captcha" data-sitekey="98809664-253c-40a8-9cb4-79c811ea2e14" data-callback="onCaptchaSuccess" data-expired-callback="onCaptchaExpired" data-error-callback="onCaptchaError"></div>
                         </div>
-                    
-                        <button type="submit" id="submit-btn">Send Message</button>
+                     
+                        <button type="submit" id="submit-btn" disabled aria-disabled="true">Complete captcha to send</button>
                       </form>
                     
                       <p id="formStatus"></p>
@@ -179,6 +179,26 @@
                 </script>
 
 <script>
+  function setSubmitButtonState(state) {
+    const submitBtn = document.getElementById('submit-btn');
+    if (!submitBtn) return;
+
+    const isBusy = state === 'busy';
+    const isReady = state === 'ready';
+
+    submitBtn.disabled = !isReady;
+    submitBtn.setAttribute('aria-disabled', String(!isReady));
+    submitBtn.classList.toggle('ready', isReady);
+    submitBtn.classList.toggle('busy', isBusy);
+
+    if (isBusy) {
+      submitBtn.textContent = 'Sending...';
+      return;
+    }
+
+    submitBtn.textContent = isReady ? 'Send Message' : 'Complete captcha to send';
+  }
+
   // Callback function for hCaptcha success
   function onCaptchaSuccess(token) {
     const submitBtn = document.getElementById('submit-btn');
@@ -204,10 +224,30 @@
       }, 50);
     }
     
-    // Trigger button expansion animation
+    // Enable the submit button once the captcha is solved
     setTimeout(() => {
-      submitBtn.classList.add('visible');
+      setSubmitButtonState('ready');
     }, 50);
+  }
+
+  function onCaptchaExpired() {
+    setSubmitButtonState('idle');
+
+    const formStatus = document.getElementById('formStatus');
+    if (!formStatus) return;
+
+    formStatus.textContent = 'Captcha expired. Please complete it again.';
+    formStatus.classList.add('visible');
+  }
+
+  function onCaptchaError() {
+    setSubmitButtonState('idle');
+
+    const formStatus = document.getElementById('formStatus');
+    if (!formStatus) return;
+
+    formStatus.textContent = 'Captcha failed to load. Please refresh and try again.';
+    formStatus.classList.add('visible');
   }
 
   document.addEventListener('DOMContentLoaded', function() {
@@ -215,6 +255,7 @@
   
     const contactForm = document.getElementById('contactForm');
     const formStatus = document.getElementById('formStatus');
+    setSubmitButtonState('idle');
   
     contactForm.addEventListener('submit', function(event) {
       event.preventDefault();
@@ -230,39 +271,35 @@
       }
 
       // Get hCaptcha response token
-      const hcaptchaResponse = hcaptcha.getResponse();
+      const hcaptchaResponse = window.hcaptcha && typeof hcaptcha.getResponse === 'function'
+        ? hcaptcha.getResponse()
+        : '';
       
       if (!hcaptchaResponse) {
-        alert('Please complete the captcha before sending your message.');
+        formStatus.textContent = 'Please complete the captcha before sending your message.';
+        formStatus.classList.add('visible');
+        setSubmitButtonState('idle');
         return;
       }
   
-      // Hide send button first
-      const submitBtn = document.getElementById('submit-btn');
-      submitBtn.classList.remove('visible');
-      
-      // Then show sending status
-      setTimeout(() => {
-        formStatus.textContent = 'Sending...';
-        formStatus.classList.add('visible');
-      }, 50);
+      setSubmitButtonState('busy');
+      formStatus.textContent = 'Sending...';
+      formStatus.classList.add('visible');
   
       emailjs.sendForm('service_ek7hewa', 'template_li5mv5e', this)
         .then(function() {
           formStatus.textContent = 'Message sent successfully!';
           contactForm.reset();
           
-          // Reset hCaptcha and hide button again (matching other sections)
+          // Reset hCaptcha and require a fresh solve for the next message
           hcaptcha.reset();
-          const submitBtn = document.getElementById('submit-btn');
-          
-          // Remove visible class to hide button
-          submitBtn.classList.remove('visible');
+          setSubmitButtonState('idle');
 
           setTimeout(() => formStatus.classList.remove('visible'), 3000);
         }, function(error) {
           formStatus.textContent = 'Failed to send message. Please try again.';
           console.error('EmailJS error:', error);
+          setSubmitButtonState('ready');
           setTimeout(() => formStatus.classList.remove('visible'), 3000);
         });
     });
@@ -508,66 +545,6 @@
                     });
                   }, 500); // Adjust the delay to match when the visualizer is ready
         
-                  // Update mute button click handler
-                  muteBtn.onclick = function() {
-                    if (!sound.playing()) {
-                      // Resume audio context if it was suspended
-                      if (audioContext.state === 'suspended') {
-                        audioContext.resume();
-                      }
-                    }
-                    
-                    const isVisible = volumeSliderContainer.classList.contains('visible');
-                    
-                    if (!isVisible) {
-                      volumeSliderContainer.classList.add('visible');
-                      // Close if clicking outside
-                      const closeHandler = function(e) {
-                        if (!volumeSliderContainer.contains(e.target) && e.target !== muteBtn) {
-                          volumeSliderContainer.classList.remove('visible');
-                          document.removeEventListener('click', closeHandler);
-                        }
-                      };
-                      
-                      // Use a small timeout to prevent immediate close
-                      setTimeout(() => {
-                        document.addEventListener('click', closeHandler);
-                      }, 10);
-                      
-                      // Prevent closing when clicking on the slider
-                      volumeSliderContainer.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                      });
-                    } else {
-                      volumeSliderContainer.classList.remove('visible');
-                      document.removeEventListener('click', closeVolumeSlider);
-                    }
-                  };
-                  
-                  // Handle volume change
-                  volumeSlider.addEventListener('input', function() {
-                    const volume = this.value / 100;
-                    sound.volume(volume);
-                    
-                    // Update mute state if needed
-                    if (volume > 0 && sound.mute()) {
-                      sound.mute(false);
-                      muteBtn.innerHTML = volumeOn;
-                    } else if (volume === 0 && !sound.mute()) {
-                      sound.mute(true);
-                      muteBtn.innerHTML = volumeOff;
-                    }
-                    
-                    // Save volume to localStorage
-                    localStorage.setItem('volume', volume);
-                  });
-        
-                  // Add audio ended handler
-                  sound.on('end', function() {
-                    muteBtn.innerHTML = volumeOff;
-                    volumeSliderContainer.classList.remove('visible');
-                    nowPlaying.classList.remove('visible');
-                  });
                 };
         
                 // Film grain effect
@@ -735,13 +712,13 @@
         }
         
         #submit-btn {
-          height: 0;
+          height: 60px;
           font-size: 1rem;
-          opacity: 0;
+          opacity: 0.55;
           overflow: hidden;
-          margin: 0;
-          padding: 0;
-          border: none;
+          margin-top: 20px;
+          padding: 1rem;
+          border: 1px solid rgba(255, 255, 255, 0.18);
           cursor: url(hand-pointer.svg) 9 9, pointer;
           background-color: rgba(255, 255, 255, 0.02);
           border-radius: 20px;
@@ -765,16 +742,20 @@
           font-family: "Special Gothic Expanded One", sans-serif;
           font-weight: normal;
           letter-spacing: 0.11rem;
-          pointer-events: none;
+          pointer-events: auto;
         }
         
-        #submit-btn.visible {
-          height: 60px;
+        #submit-btn.ready {
           opacity: 1;
-          margin-top: 20px;
-          padding: 1rem;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          pointer-events: auto;
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #submit-btn:disabled {
+          cursor: not-allowed;
+        }
+
+        #submit-btn.busy {
+          opacity: 1;
         }
         
         #submit-btn:hover {
@@ -1398,38 +1379,40 @@
         let isDragging = false;
         let offsetX, offsetY;
         
-        embedHeader.addEventListener('mousedown', (e) => {
-          isDragging = true;
-        
-          // Store the current position relative to the viewport
-          const rect = embedWindow.getBoundingClientRect();
-        
-          // Remove transform to avoid interference
-          embedWindow.style.transform = 'none';
-        
-          // Set top/left to current visual position
-          embedWindow.style.left = rect.left + 'px';
-          embedWindow.style.top = rect.top + 'px';
-        
-          // Calculate offsets from mouse to element's top-left corner
-          offsetX = e.clientX - rect.left;
-          offsetY = e.clientY - rect.top;
-        
-          embedWindow.style.transition = 'none'; // Disable transition during drag
-          embedWindow.style.cursor = 'grabbing';
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-        
-          // Update position based on mouse position and initial offset
-          embedWindow.style.left = (e.clientX - offsetX) + 'px';
-          embedWindow.style.top = (e.clientY - offsetY) + 'px';
-        });
-        
-        document.addEventListener('mouseup', () => {
-          isDragging = false;
-          embedWindow.style.transition = ''; // Re-enable transition for smooth future movements (if any)
-          embedWindow.style.cursor = 'auto';
-        });
+        if (embedWindow && embedHeader) {
+          embedHeader.addEventListener('mousedown', (e) => {
+            isDragging = true;
+          
+            // Store the current position relative to the viewport
+            const rect = embedWindow.getBoundingClientRect();
+          
+            // Remove transform to avoid interference
+            embedWindow.style.transform = 'none';
+          
+            // Set top/left to current visual position
+            embedWindow.style.left = rect.left + 'px';
+            embedWindow.style.top = rect.top + 'px';
+          
+            // Calculate offsets from mouse to element's top-left corner
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+          
+            embedWindow.style.transition = 'none'; // Disable transition during drag
+            embedWindow.style.cursor = 'grabbing';
+          });
+          
+          document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+          
+            // Update position based on mouse position and initial offset
+            embedWindow.style.left = (e.clientX - offsetX) + 'px';
+            embedWindow.style.top = (e.clientY - offsetY) + 'px';
+          });
+          
+          document.addEventListener('mouseup', () => {
+            isDragging = false;
+            embedWindow.style.transition = ''; // Re-enable transition for smooth future movements (if any)
+            embedWindow.style.cursor = 'auto';
+          });
+        }
     </script>
