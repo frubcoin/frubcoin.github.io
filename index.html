@@ -240,7 +240,69 @@
                     }, (itemsArray.length * 100) + 50);
                   }
                 }
-        
+
+                function animatePortfolioItems() {
+                  setTimeout(() => {
+                    const items = document.querySelectorAll('.portfolio-item, h4, h2');
+                    items.forEach((item, index) => {
+                      setTimeout(() => {
+                        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease';
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateY(0)';
+                      }, 100 * index);
+                    });
+                  }, 500);
+                }
+
+                function disableButterchurnBackground(reason) {
+                  const visualizerContainer = document.getElementById('visualizer-container');
+                  if (visualizerContainer) {
+                    visualizerContainer.innerHTML = '';
+                    visualizerContainer.style.display = 'none';
+                    visualizerContainer.setAttribute('aria-hidden', 'true');
+                  }
+
+                  console.log('Butterchurn background disabled:', reason);
+                }
+
+                function canUseButterchurnBackground() {
+                  if (!window.WebGLRenderingContext || !window.butterchurn || !window.butterchurnPresets) {
+                    return false;
+                  }
+
+                  const testCanvas = document.createElement('canvas');
+                  const contextOptions = {
+                    failIfMajorPerformanceCaveat: true,
+                    powerPreference: 'high-performance'
+                  };
+                  const gl =
+                    testCanvas.getContext('webgl', contextOptions) ||
+                    testCanvas.getContext('experimental-webgl', contextOptions);
+
+                  if (!gl) {
+                    return false;
+                  }
+
+                  const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                  const renderer = debugInfo
+                    ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || ''
+                    : gl.getParameter(gl.RENDERER) || '';
+                  const vendor = debugInfo
+                    ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || ''
+                    : gl.getParameter(gl.VENDOR) || '';
+                  const rendererString = `${vendor} ${renderer}`.toLowerCase();
+                  const softwareRenderers = [
+                    'swiftshader',
+                    'software',
+                    'llvmpipe',
+                    'microsoft basic render',
+                    'basic render',
+                    'warp'
+                  ];
+
+                  return !softwareRenderers.some(indicator => rendererString.includes(indicator));
+                }
+         
                 window.onload = () => {
                   // Initialize portfolio items to be hidden
                   const items = document.querySelectorAll('.portfolio-item, .portfolio h2, .portfolio h4');
@@ -249,88 +311,89 @@
                     item.style.transform = 'translateY(20px)';
                     item.classList.remove('animate');
                   });
-        
-                  // Initialize Butterchurn visualizer
-                  const canvas = document.createElement('canvas');
-                  canvas.width = window.innerWidth;
-                  canvas.height = window.innerHeight;
-                  document.getElementById('visualizer-container').appendChild(canvas);
-        
-                  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                  const visualizer = butterchurn.default.createVisualizer(audioContext, canvas, {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                  });
-        
-                  // Get all presets
-                  const presets = butterchurnPresets.getPresets();
-                  const presetKeys = Object.keys(presets);
-                  let currentPresetIndex = 0;
-        
-                  // Function to load the next preset
-                  function loadNextPreset() {
-                    currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
-                    const preset = presets[presetKeys[currentPresetIndex]];
-                    console.log('Current preset:', presetKeys[currentPresetIndex]); // Log the current preset name
-                    visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
+
+                  if (!canUseButterchurnBackground()) {
+                    disableButterchurnBackground('WebGL or hardware acceleration is unavailable');
+                    animatePortfolioItems();
+                    return;
                   }
-        
-                  // Load initial preset
-                  loadNextPreset();
-        
-                  // Create Howler audio instance
-                  const sound = new Howl({
-                    src: ['Let U Go.mp3?v=1'],
-                    loop: true,
-                    volume: 0.1,
-                    html5: true // Enable HTML5 mode for Web Audio API compatibility
-                  });
-        
-                  // Connect Howler to visualizer
-                  const analyser = audioContext.createAnalyser();
-                  analyser.fftSize = 512;
-                  
-                  // Get the audio node from Howler when it's ready
-                  sound.once('load', function() {
-                    const audioNode = sound._sounds[0]._node;
-                    const audioSource = audioContext.createMediaElementSource(audioNode);
-                    audioSource.connect(analyser);
-                    analyser.connect(audioContext.destination);
-                    visualizer.connectAudio(analyser);
-                  });
-        
-                  // Start the visualizer rendering
-                  visualizer.setRendererSize(window.innerWidth, window.innerHeight);
-        
-                  function renderFrame() {
-                    visualizer.render();
-                    requestAnimationFrame(renderFrame);
-                  }
-        
-                  renderFrame();
-        
-                  // Change preset every 14 seconds
-                  setInterval(loadNextPreset, 14000);
-        
-                  // Handle window resize
-                  window.addEventListener('resize', () => {
+
+                  try {
+                    // Initialize Butterchurn visualizer
+                    const canvas = document.createElement('canvas');
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
-                    visualizer.setRendererSize(window.innerWidth, window.innerHeight);
-                  });
-        
-                  // Once the visualizer is loaded, trigger portfolio item animations
-                  setTimeout(() => {
-                    const items = document.querySelectorAll('.portfolio-item, h4, h2');
-                    items.forEach((item, index) => {
-                      setTimeout(() => {
-                        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease';
-                        item.style.opacity = '1';
-                        item.style.transform = 'translateY(0)';
-                      }, 100 * index); // Stagger the animation for each item
+                    document.getElementById('visualizer-container').appendChild(canvas);
+          
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const visualizer = butterchurn.default.createVisualizer(audioContext, canvas, {
+                      width: window.innerWidth,
+                      height: window.innerHeight
                     });
-                  }, 500); // Adjust the delay to match when the visualizer is ready
-        
+          
+                    // Get all presets
+                    const presets = butterchurnPresets.getPresets();
+                    const presetKeys = Object.keys(presets);
+                    let currentPresetIndex = 0;
+          
+                    // Function to load the next preset
+                    function loadNextPreset() {
+                      currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
+                      const preset = presets[presetKeys[currentPresetIndex]];
+                      console.log('Current preset:', presetKeys[currentPresetIndex]); // Log the current preset name
+                      visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
+                    }
+          
+                    // Load initial preset
+                    loadNextPreset();
+          
+                    // Create Howler audio instance
+                    const sound = new Howl({
+                      src: ['Let U Go.mp3?v=1'],
+                      loop: true,
+                      volume: 0.1,
+                      html5: true // Enable HTML5 mode for Web Audio API compatibility
+                    });
+          
+                    // Connect Howler to visualizer
+                    const analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 512;
+                    
+                    // Get the audio node from Howler when it's ready
+                    sound.once('load', function() {
+                      const audioNode = sound._sounds[0]._node;
+                      const audioSource = audioContext.createMediaElementSource(audioNode);
+                      audioSource.connect(analyser);
+                      analyser.connect(audioContext.destination);
+                      visualizer.connectAudio(analyser);
+                    });
+          
+                    // Start the visualizer rendering
+                    visualizer.setRendererSize(window.innerWidth, window.innerHeight);
+          
+                    function renderFrame() {
+                      visualizer.render();
+                      requestAnimationFrame(renderFrame);
+                    }
+          
+                    renderFrame();
+          
+                    // Change preset every 14 seconds
+                    setInterval(loadNextPreset, 14000);
+          
+                    // Handle window resize
+                    window.addEventListener('resize', () => {
+                      canvas.width = window.innerWidth;
+                      canvas.height = window.innerHeight;
+                      visualizer.setRendererSize(window.innerWidth, window.innerHeight);
+                    });
+                  } catch (error) {
+                    console.warn('Butterchurn failed to initialize:', error);
+                    disableButterchurnBackground('Initialization error');
+                  }
+
+                  animatePortfolioItems();
+         
                 };
         
                 // Film grain effect
