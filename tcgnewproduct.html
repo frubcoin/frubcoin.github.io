@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Add a new TCG Product to the Calendar</title>
-    <meta name="description" content="Open the TCG Tracker Notion form to add a new product release.">
+    <meta name="description" content="Open the TCG Tracker quick submit form to add a new product release.">
     <meta name="theme-color" content="#080b10">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,6 +15,21 @@
     <link rel="icon" href="./assets/pwa/icon-192.png" sizes="192x192" type="image/png">
     <link rel="apple-touch-icon" href="./assets/pwa/apple-touch-icon.png">
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080b10;
+        --panel: rgba(10, 15, 22, 0.94);
+        --panel-strong: rgba(16, 23, 33, 0.98);
+        --border: rgba(160, 196, 255, 0.18);
+        --border-strong: rgba(121, 242, 192, 0.35);
+        --text: #eef4ff;
+        --muted: #9fb0cc;
+        --accent: #79f2c0;
+        --accent-strong: #48d7a1;
+        --danger: #ff8f9f;
+        --shadow: 0 18px 45px rgba(0, 0, 0, 0.34);
+      }
+
       * {
         box-sizing: border-box;
       }
@@ -22,31 +37,451 @@
       html,
       body {
         width: 100%;
-        height: 100%;
+        min-height: 100%;
         margin: 0;
       }
 
       body {
-        background: #ffffff;
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(121, 242, 192, 0.12), transparent 32%),
+          radial-gradient(circle at top right, rgba(110, 164, 255, 0.12), transparent 28%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      .app {
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .shell {
+        width: min(100%, 840px);
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
         overflow: hidden;
       }
 
-      iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
+      .hero {
+        padding: 24px 24px 18px;
+        border-bottom: 1px solid var(--border);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+          var(--panel-strong);
+      }
+
+      .eyebrow-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: rgba(121, 242, 192, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .sync-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 4vw, 36px);
+        line-height: 1.05;
+      }
+
+      .lead {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .panel-note {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .panel-note strong {
         display: block;
-        background: #ffffff;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+
+      .panel-note p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      form {
+        padding: 24px;
+      }
+
+      .section {
+        margin-bottom: 22px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+
+      .field-label .required {
+        color: var(--accent);
+      }
+
+      .field-help {
+        margin: -4px 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      input[type="text"],
+      input[type="url"],
+      input[type="date"],
+      textarea {
+        width: 100%;
+        min-height: 52px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(5, 9, 14, 0.88);
+        color: var(--text);
+        font: inherit;
+        transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: none;
+        border-color: var(--border-strong);
+        box-shadow: 0 0 0 3px rgba(121, 242, 192, 0.16);
+      }
+
+      .choice-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .choice {
+        position: relative;
+      }
+
+      .choice input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .choice span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+      }
+
+      .choice span:hover {
+        transform: translateY(-1px);
+        border-color: rgba(121, 242, 192, 0.25);
+      }
+
+      .choice input:checked + span {
+        border-color: rgba(121, 242, 192, 0.5);
+        background: rgba(121, 242, 192, 0.14);
+        color: var(--accent);
+      }
+
+      .conditional {
+        display: none;
+        margin-top: 12px;
+      }
+
+      .conditional.is-visible {
+        display: block;
+      }
+
+      .error-text {
+        min-height: 18px;
+        margin-top: 8px;
+        color: var(--danger);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .button,
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 18px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+      }
+
+      .button:focus-visible,
+      .link-button:focus-visible {
+        outline: 3px solid rgba(121, 242, 192, 0.35);
+        outline-offset: 3px;
+      }
+
+      .button-primary {
+        border: 0;
+        background: linear-gradient(135deg, var(--accent), #95f7d4);
+        color: #04140e;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+      }
+
+      .button-secondary,
+      .link-button {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+      }
+
+      .button:hover,
+      .link-button:hover {
+        transform: translateY(-1px);
+      }
+
+      .button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+        transform: none;
+      }
+
+      .status-card {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .status-card.is-success {
+        border-color: rgba(121, 242, 192, 0.3);
+        color: var(--text);
+      }
+
+      .status-card.is-error {
+        border-color: rgba(255, 143, 159, 0.35);
+        color: #ffd6dc;
+      }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          padding: 12px;
+        }
+
+        .hero,
+        form {
+          padding: 18px;
+        }
+
+        .eyebrow-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        .button,
+        .link-button {
+          width: 100%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .choice span,
+        .button,
+        .link-button,
+        input,
+        textarea {
+          transition: none;
+        }
       }
     </style>
   </head>
   <body>
-    <iframe
-      src="https://tcgtracker.notion.site/ebd//01ab77f9870640c0b31baafd6a4d592e"
-      title="New TCG product form"
-      loading="eager"
-      allowfullscreen
-    ></iframe>
+    <main class="app">
+      <section class="shell">
+        <header class="hero">
+          <div class="eyebrow-row">
+            <span class="eyebrow">Quick Submit</span>
+            <span class="sync-pill" id="sync-pill">Local draft mode</span>
+          </div>
+          <h1>Add a new TCG product</h1>
+          <p class="lead">This mirrors your Notion form, but keeps submission inside the app shell so people don’t hit the post-submit email/account prompt.</p>
+          <div class="panel-note" id="connection-note">
+            <strong>Sync note</strong>
+            <p>The custom form UI is live now. To write directly into Notion, connect a secure submit endpoint in <code>js/tcg-form-config.js</code>. Until then, submissions can be saved locally on this device and the original Notion form stays available as a fallback.</p>
+          </div>
+        </header>
+
+        <form id="product-form" novalidate>
+          <div class="section">
+            <label class="field-label" for="product-name">What product or release are you adding?<span class="required">*</span></label>
+            <input id="product-name" name="productName" type="text" autocomplete="off" required>
+            <div class="error-text" id="error-productName"></div>
+          </div>
+
+          <fieldset class="section">
+            <legend class="field-label">Which game is it for?<span class="required">*</span></legend>
+            <div class="choice-grid">
+              <label class="choice"><input type="radio" name="game" value="Riftbound"><span>Riftbound</span></label>
+              <label class="choice"><input type="radio" name="game" value="Pokemon"><span>Pokemon</span></label>
+              <label class="choice"><input type="radio" name="game" value="Magic: The Gathering"><span>Magic: The Gathering</span></label>
+              <label class="choice"><input type="radio" name="game" value="Yu-Gi-Oh!"><span>Yu-Gi-Oh!</span></label>
+              <label class="choice"><input type="radio" name="game" value="Lorcana"><span>Lorcana</span></label>
+              <label class="choice"><input type="radio" name="game" value="One Piece"><span>One Piece</span></label>
+              <label class="choice"><input type="radio" name="game" value="Flesh and Blood"><span>Flesh and Blood</span></label>
+              <label class="choice"><input type="radio" name="game" value="Other"><span>Other</span></label>
+            </div>
+            <div class="conditional" id="game-other-wrap">
+              <label class="field-label" for="game-other">Other game</label>
+              <input id="game-other" name="gameOther" type="text" autocomplete="off">
+            </div>
+            <div class="error-text" id="error-game"></div>
+          </fieldset>
+
+          <fieldset class="section">
+            <legend class="field-label">What type of product is it?<span class="required">*</span></legend>
+            <div class="choice-grid">
+              <label class="choice"><input type="radio" name="productType" value="Set"><span>Set</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Booster box"><span>Booster box</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Starter deck"><span>Starter deck</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Collection box"><span>Collection box</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Promo"><span>Promo</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Accessory"><span>Accessory</span></label>
+              <label class="choice"><input type="radio" name="productType" value="Other"><span>Other</span></label>
+            </div>
+            <div class="conditional" id="type-other-wrap">
+              <label class="field-label" for="type-other">Other product type</label>
+              <input id="type-other" name="productTypeOther" type="text" autocomplete="off">
+            </div>
+            <div class="error-text" id="error-productType"></div>
+          </fieldset>
+
+          <div class="section">
+            <label class="field-label" for="release-date">When does it release?</label>
+            <input id="release-date" name="releaseDate" type="date">
+            <div class="error-text" id="error-releaseDate"></div>
+          </div>
+
+          <fieldset class="section">
+            <legend class="field-label">How important is this purchase?</legend>
+            <div class="choice-grid">
+              <label class="choice"><input type="radio" name="priority" value="Must-buy"><span>Must-buy</span></label>
+              <label class="choice"><input type="radio" name="priority" value="Maybe"><span>Maybe</span></label>
+              <label class="choice"><input type="radio" name="priority" value="Skip"><span>Skip</span></label>
+            </div>
+            <div class="error-text" id="error-priority"></div>
+          </fieldset>
+
+          <div class="section">
+            <label class="field-label" for="source-url">Where can you pre-order or view it?</label>
+            <p class="field-help">Paste a product, announcement, or pre-order URL.</p>
+            <input id="source-url" name="sourceUrl" type="url" inputmode="url" autocomplete="url">
+            <div class="error-text" id="error-sourceUrl"></div>
+          </div>
+
+          <div class="section">
+            <label class="field-label" for="notes">Anything else to remember?</label>
+            <textarea id="notes" name="notes"></textarea>
+            <div class="error-text" id="error-notes"></div>
+          </div>
+
+          <div class="actions">
+            <button class="button button-primary" id="submit-button" type="submit">Submit Product</button>
+            <button class="button button-secondary" id="save-draft-button" type="button">Save Draft</button>
+            <a class="link-button" id="notion-fallback-link" href="https://tcgtracker.notion.site/ebd//01ab77f9870640c0b31baafd6a4d592e" target="_blank" rel="noreferrer">Open Original Notion Form</a>
+          </div>
+
+          <div class="status-card" id="form-status" role="status" aria-live="polite">
+            Fill out the fields above and submit. Drafts are saved on this device only until a secure Notion sync endpoint is connected.
+          </div>
+
+          <div class="meta-row">
+            <span id="draft-meta">No draft loaded</span>
+            <span id="queue-meta">0 pending local submissions</span>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script src="./js/tcg-form-config.js"></script>
+    <script src="./js/tcg-form.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {

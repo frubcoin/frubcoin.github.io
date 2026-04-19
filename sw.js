@@ -1,4 +1,4 @@
-const CACHE_VERSION = "tcg-release-calendar-v1";
+const CACHE_VERSION = "tcg-release-calendar-v2";
 const SHELL_CACHE = `shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `assets-${CACHE_VERSION}`;
 const OFFLINE_URL = "./offline.html";
@@ -7,6 +7,8 @@ const SHELL_FILES = [
   "./releasecalendar.html",
   "./tcgnewproduct.html",
   "./manifest.webmanifest",
+  "./js/tcg-form-config.js",
+  "./js/tcg-form.js",
   "./assets/pwa/icon-192.png",
   "./assets/pwa/icon-512.png",
   "./assets/pwa/icon-maskable-512.png",
