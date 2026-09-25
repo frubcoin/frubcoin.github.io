@@ -99,6 +99,19 @@
                 <style>
 
 
+                    #visualizer-container {
+                      opacity: 0;
+                      transition: opacity 0.65s ease-out;
+                    }
+                    #visualizer-container.is-ready {
+                      opacity: 1;
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                      #visualizer-container {
+                        transition: none;
+                      }
+                    }
+
                     /* (removed empty mobile rule for #show-prices-btn) */
                 #prices-expand-section {
   max-height: 0;
@@ -298,7 +311,7 @@
                   return !softwareRenderers.some(indicator => rendererString.includes(indicator));
                 }
          
-                window.onload = () => {
+                function initializePage() {
                   // Initialize portfolio items to be hidden
                   const items = document.querySelectorAll('.portfolio-item, .portfolio h2, .portfolio h4');
                   items.forEach(item => {
@@ -318,7 +331,8 @@
                     const canvas = document.createElement('canvas');
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
-                    document.getElementById('visualizer-container').appendChild(canvas);
+                    const visualizerContainer = document.getElementById('visualizer-container');
+                    visualizerContainer.appendChild(canvas);
           
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const visualizer = butterchurn.default.createVisualizer(audioContext, canvas, {
@@ -339,15 +353,15 @@
                     let currentPresetIndex = -1;
           
                     // Function to load the next preset
-                    function loadNextPreset() {
+                    function loadNextPreset(transitionSeconds = 2.7) {
                       currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
                       const preset = presets[presetKeys[currentPresetIndex]];
                       console.log('Current preset:', presetKeys[currentPresetIndex]); // Log the current preset name
-                      visualizer.loadPreset(preset, 2.7); // 2.7 seconds transition
+                      visualizer.loadPreset(preset, transitionSeconds);
                     }
           
-                    // Load initial preset
-                    loadNextPreset();
+                    // Show the initial preset immediately; later changes still blend smoothly.
+                    loadNextPreset(0);
           
                     // Create Howler audio instance
                     const sound = new Howl({
@@ -373,8 +387,13 @@
                     // Start the visualizer rendering
                     visualizer.setRendererSize(window.innerWidth, window.innerHeight);
           
+                    let hasRenderedFirstFrame = false;
                     function renderFrame() {
                       visualizer.render();
+                      if (!hasRenderedFirstFrame) {
+                        hasRenderedFirstFrame = true;
+                        requestAnimationFrame(() => visualizerContainer.classList.add('is-ready'));
+                      }
                       requestAnimationFrame(renderFrame);
                     }
           
@@ -396,7 +415,13 @@
 
                   animatePortfolioItems();
          
-                };
+                }
+
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', initializePage, { once: true });
+                } else {
+                  initializePage();
+                }
         
                 // Film grain effect
                 const filmGrainOverlay = document.getElementById('film-grain-overlay');
