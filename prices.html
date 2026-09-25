@@ -1,5 +1,8 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@700&display=swap" rel="stylesheet">
@@ -649,6 +652,7 @@
   <script src="https://unpkg.com/moveable/dist/moveable.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-countto/1.2.0/jquery.countTo.min.js"></script>
+  <script src="js/crypto-api.js"></script>
 </head>
 <body>
   <div id="background-canvas"></div>
@@ -696,8 +700,7 @@
     <canvas id="price-chart"></canvas>
   </div>
   <script>
-    const API_URL = "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH,BTC,SOL,TON,SUI&tsyms=USD";
-    const HISTORY_API_URL = "https://min-api.cryptocompare.com/data/v2/histominute?fsym=ETH&tsym=USD&limit=10";
+    const DEFAULT_SYMBOLS = ["ETH", "BTC", "SOL", "TON", "SUI"];
     
     const ethPriceElement = document.getElementById("eth-price");
     const btcPriceElement = document.getElementById("btc-price");
@@ -741,15 +744,12 @@
     let currentTimeRange = "24h";
     let chartUpdateInterval;
     let moveable = null;
-    let trackedSymbols = []; // Initialize as empty, will be populated from API_URL
+    let trackedSymbols = [...DEFAULT_SYMBOLS];
     let prevUpdateTime = { hour: null, minute: null, second: null, ampm: null };
     
     async function fetchPrices() {
-      const apiUrl = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${trackedSymbols.join(',')}&tsyms=USD`;
       try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        return data;
+        return await window.CryptoPriceApi.fetchPrices(trackedSymbols);
       } catch (error) {
         console.error('Error fetching prices:', error);
         return null;
@@ -757,39 +757,12 @@
     }
     
     async function fetchHistory(coin, timeRange = "10m") {
-      let limit, endpoint;
-      
-      switch(timeRange) {
-        case "10m":
-          limit = 10;
-          endpoint = "histominute";
-          break;
-        case "1h":
-          limit = 60;
-          endpoint = "histominute";
-          break;
-        case "6h":
-          limit = 36;
-          endpoint = "histohour";
-          break;
-        case "24h":
-          limit = 24;
-          endpoint = "histohour";
-          break;
-        case "7d":
-          limit = 7;
-          endpoint = "histoday";
-          break;
-        case "1y":
-          limit = 365;
-          endpoint = "histoday";
-          break;
+      try {
+        return await window.CryptoPriceApi.fetchHistory(coin, timeRange);
+      } catch (error) {
+        console.error('Error fetching price history:', error);
+        return [];
       }
-    
-    
-      const response = await fetch(`https://min-api.cryptocompare.com/data/v2/${endpoint}?fsym=${coin}&tsym=USD&limit=${limit}`);
-      const data = await response.json();
-      return data.Data.Data;
     }
     
     function updateGlobeColor(prices) {
@@ -848,7 +821,7 @@
   
           // Set the image source and fade in
           if (iconElement && data.IMAGEURL) {
-            iconElement.src = `https://www.cryptocompare.com${data.IMAGEURL}`;
+            iconElement.src = data.IMAGEURL;
             iconElement.onload = () => {
               iconElement.style.opacity = '1';
             };
@@ -881,7 +854,7 @@
       });
   
       // Update and animate timestamp ONLY IF pricesChanged is true
-      if (pricesChanged) {
+      if (pricesChanged || prevUpdateTime.hour === null) {
           const now = new Date();
           let hours = now.getHours();
           const minutes = now.getMinutes();
@@ -1333,13 +1306,6 @@
     }
     
     async function init() {
-      // Parse symbols from API_URL and populate trackedSymbols
-      const urlParams = new URLSearchParams(API_URL.split('?')[1]);
-      const fsyms = urlParams.get('fsyms');
-      if (fsyms) {
-        trackedSymbols = fsyms.split(',');
-      }
-      
       // Prefer Lite if WebGL/GPU isn't available, otherwise choose by device
       if (!supportsWebGL()) {
         backgroundSelect.value = 'lite';
@@ -1427,7 +1393,7 @@
       setInterval(async () => {
         const prices = await fetchPrices();
         updatePrices(prices);
-      }, 10000); // Update prices every 10 seconds
+      }, 30000);
 
       setInterval(async () => {
         if (selectedCoin) { // Only fetch history if a coin is selected
@@ -1437,12 +1403,13 @@
       }, 60000); // Update history every 60 seconds
 
       // Add event listener for the add ticker button
-      document.getElementById('add-ticker-btn').addEventListener('click', async () => {
+      const addTickerButton = document.getElementById('add-ticker-btn');
+      if (addTickerButton) addTickerButton.addEventListener('click', async () => {
         const urlInput = document.getElementById('ticker-url-input');
         const url = urlInput.value.trim();
         const match = url.match(/fsym=([A-Z0-9]+)/i);
         if (!match) {
-          alert('Invalid CryptoCompare link!');
+          alert('Enter a supported ticker symbol.');
           return;
         }
         const symbol = match[1].toUpperCase();
@@ -1452,9 +1419,7 @@
           return;
         }
 
-        const apiUrl = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${symbol}&tsyms=USD`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+        const data = await window.CryptoPriceApi.fetchPrices([symbol]);
         if (!data.RAW || !data.RAW[symbol]) {
           alert('Could not fetch data for this symbol.');
           return;

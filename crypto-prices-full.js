@@ -7,10 +7,8 @@ class CryptoPricesFull {
   constructor(config = {}) {
     // Configuration with defaults
     this.config = {
-      apiUrl: config.apiUrl || "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH,BTC,SOL&tsyms=USD",
-      historyApiUrl: config.historyApiUrl || "https://min-api.cryptocompare.com/data/v2/histominute?fsym=ETH&tsym=USD&limit=10",
       trackedSymbols: config.trackedSymbols || ["ETH", "BTC", "SOL"],
-      updateInterval: config.updateInterval || 10000, // 10 seconds
+      updateInterval: config.updateInterval || 30000,
       historyUpdateInterval: config.historyUpdateInterval || 60000, // 60 seconds
       ...config
     };
@@ -88,11 +86,8 @@ class CryptoPricesFull {
 
   // Fetch prices from API
   async fetchPrices() {
-    const apiUrl = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${this.config.trackedSymbols.join(',')}&tsyms=USD`;
     try {
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-      return data;
+      return await window.CryptoPriceApi.fetchPrices(this.config.trackedSymbols);
     } catch (error) {
       console.error('Error fetching prices:', error);
       return null;
@@ -101,38 +96,12 @@ class CryptoPricesFull {
 
   // Fetch price history for charts
   async fetchHistory(coin, timeRange = "10m") {
-    let limit, endpoint;
-    
-    switch(timeRange) {
-      case "10m":
-        limit = 10;
-        endpoint = "histominute";
-        break;
-      case "1h":
-        limit = 60;
-        endpoint = "histominute";
-        break;
-      case "6h":
-        limit = 36;
-        endpoint = "histohour";
-        break;
-      case "24h":
-        limit = 24;
-        endpoint = "histohour";
-        break;
-      case "7d":
-        limit = 7;
-        endpoint = "histoday";
-        break;
-      case "1y":
-        limit = 365;
-        endpoint = "histoday";
-        break;
+    try {
+      return await window.CryptoPriceApi.fetchHistory(coin, timeRange);
+    } catch (error) {
+      console.error('Error fetching price history:', error);
+      return [];
     }
-
-    const response = await fetch(`https://min-api.cryptocompare.com/data/v2/${endpoint}?fsym=${coin}&tsym=USD&limit=${limit}`);
-    const data = await response.json();
-    return data.Data.Data;
   }
 
   // Update globe color based on price changes
@@ -193,7 +162,7 @@ class CryptoPricesFull {
         if (spinner) spinner.style.display = 'none';
         
         if (iconElement && data.IMAGEURL) {
-          iconElement.src = `https://www.cryptocompare.com${data.IMAGEURL}`;
+          iconElement.src = data.IMAGEURL;
           iconElement.onload = () => { iconElement.style.opacity = '1'; };
           if (iconElement.complete) iconElement.style.opacity = '1';
         }
@@ -348,13 +317,6 @@ class CryptoPricesFull {
       priceChart: document.getElementById('price-chart'),
       chartTimeRanges: document.getElementById('chart-time-ranges')
     };
-
-    // Parse symbols from API_URL
-    const urlParams = new URLSearchParams(this.config.apiUrl.split('?')[1]);
-    const fsyms = urlParams.get('fsyms');
-    if (fsyms) {
-      this.config.trackedSymbols = fsyms.split(',');
-    }
 
     // Initialize background
     this.initBackground();

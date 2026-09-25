@@ -7,9 +7,8 @@ class CryptoPrices {
   constructor(config = {}) {
     // Configuration with defaults
     this.config = {
-      apiUrl: config.apiUrl || "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH,BTC,SOL&tsyms=USD",
       trackedSymbols: config.trackedSymbols || ["ETH", "BTC", "SOL"],
-      updateInterval: config.updateInterval || 10000, // 10 seconds
+      updateInterval: config.updateInterval || 30000,
       containerSelector: config.containerSelector || '#prices-expand-section',
       pricesListSelector: config.pricesListSelector || '#prices-list',
       lastUpdateSelector: config.lastUpdateSelector || '#last-update',
@@ -155,7 +154,7 @@ class CryptoPrices {
         if (spinner) spinner.style.display = 'none';
 
         if (iconElement && data.IMAGEURL) {
-          iconElement.src = `https://www.cryptocompare.com${data.IMAGEURL}`;
+          iconElement.src = data.IMAGEURL;
           iconElement.onload = () => { iconElement.style.opacity = '1'; };
           if (iconElement.complete) iconElement.style.opacity = '1';
         }
@@ -247,9 +246,7 @@ async updateTimestamp() {
   // Fetch prices from API
   async fetchPrices() {
     try {
-      const response = await fetch(this.config.apiUrl);
-      const data = await response.json();
-      return data;
+      return await window.CryptoPriceApi.fetchPrices(this.config.trackedSymbols);
     } catch (error) {
       console.error('Error fetching prices:', error);
       return null;
@@ -272,6 +269,7 @@ async updateTimestamp() {
       this.elements.showPricesBtn.onclick = () => this.togglePrices();
     }
 
+    this.elements.container.dataset.inited = '1';
     await this.initPrices();
   }
 
