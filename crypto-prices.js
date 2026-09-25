@@ -108,10 +108,6 @@ class CryptoPrices {
       <span class="price-ticker" id="expand-${symbol.toLowerCase()}-ticker"></span>
     `;
 
-    container.addEventListener('click', () => {
-      window.location.href = '/prices';
-    });
-
     return container;
   }
 
