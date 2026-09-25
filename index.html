@@ -370,6 +370,10 @@
                       volume: 0.1,
                       html5: true // Enable HTML5 mode for Web Audio API compatibility
                     });
+
+                    // Share this player with the top-right audio controls.
+                    window.siteAudio = sound;
+                    window.siteVisualizerAudioContext = audioContext;
           
                     // Connect Howler to visualizer
                     const analyser = audioContext.createAnalyser();
@@ -386,14 +390,69 @@
           
                     // Start the visualizer rendering
                     visualizer.setRendererSize(window.innerWidth, window.innerHeight);
-          
-                    let hasRenderedFirstFrame = false;
+
+                    function isFrameEffectivelyBlack() {
+                      try {
+                        const gl =
+                          canvas.getContext('webgl2') ||
+                          canvas.getContext('webgl') ||
+                          canvas.getContext('experimental-webgl');
+                        if (!gl || !gl.drawingBufferWidth || !gl.drawingBufferHeight) return false;
+
+                        const blockSize = 24;
+                        const pixels = new Uint8Array(blockSize * blockSize * 4);
+                        const positions = [0.2, 0.5, 0.8];
+                        let brightnessTotal = 0;
+                        let brightPixels = 0;
+                        let sampledPixels = 0;
+
+                        positions.forEach(xRatio => {
+                          positions.forEach(yRatio => {
+                            const x = Math.max(0, Math.min(
+                              gl.drawingBufferWidth - blockSize,
+                              Math.floor(gl.drawingBufferWidth * xRatio - blockSize / 2)
+                            ));
+                            const y = Math.max(0, Math.min(
+                              gl.drawingBufferHeight - blockSize,
+                              Math.floor(gl.drawingBufferHeight * yRatio - blockSize / 2)
+                            ));
+                            gl.readPixels(x, y, blockSize, blockSize, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+                            for (let i = 0; i < pixels.length; i += 4) {
+                              const brightness = Math.max(pixels[i], pixels[i + 1], pixels[i + 2]);
+                              brightnessTotal += brightness;
+                              if (brightness > 12) brightPixels += 1;
+                              sampledPixels += 1;
+                            }
+                          });
+                        });
+
+                        const averageBrightness = brightnessTotal / sampledPixels;
+                        const brightPixelRatio = brightPixels / sampledPixels;
+                        return averageBrightness < 2 && brightPixelRatio < 0.002;
+                      } catch (error) {
+                        console.warn('Could not inspect Butterchurn frame:', error);
+                        return false;
+                      }
+                    }
+
+                    let presetCheckAt = performance.now() + 400;
+                    let startupPresetAttempts = 0;
+                    let visualizerIsReady = false;
                     function renderFrame() {
                       visualizer.render();
-                      if (!hasRenderedFirstFrame) {
-                        hasRenderedFirstFrame = true;
-                        requestAnimationFrame(() => visualizerContainer.classList.add('is-ready'));
+
+                      if (!visualizerIsReady && performance.now() >= presetCheckAt) {
+                        if (isFrameEffectivelyBlack() && startupPresetAttempts < 8) {
+                          startupPresetAttempts += 1;
+                          loadNextPreset(0);
+                          presetCheckAt = performance.now() + 350;
+                        } else {
+                          visualizerIsReady = true;
+                          requestAnimationFrame(() => visualizerContainer.classList.add('is-ready'));
+                        }
                       }
+
                       requestAnimationFrame(renderFrame);
                     }
           
@@ -1023,8 +1082,8 @@
           volumeSliderContainer.appendChild(volumeSlider);
           document.body.appendChild(volumeSliderContainer);
         
-          // Create Howler audio instance for mute button
-          const sound2 = new Howl({
+          // Reuse the same player that feeds the Butterchurn analyser.
+          const sound2 = window.siteAudio || new Howl({
             src: ['Let U Go.mp3?v=1'],
             loop: true,
             volume: 0.1,
@@ -1032,9 +1091,12 @@
           });
           
           muteBtn.innerHTML = volumeOff;
-          muteBtn.onclick = function() {
+          muteBtn.onclick = async function() {
             if (Howler.ctx && Howler.ctx.state === 'suspended') {
-              Howler.ctx.resume();
+              await Howler.ctx.resume();
+            }
+            if (window.siteVisualizerAudioContext?.state === 'suspended') {
+              await window.siteVisualizerAudioContext.resume();
             }
             if (!sound2.playing()) {
               sound2.play();
@@ -1089,6 +1151,9 @@
           const unlockAudio = () => {
             if (Howler.ctx && Howler.ctx.state === 'suspended') {
               Howler.ctx.resume();
+            }
+            if (window.siteVisualizerAudioContext?.state === 'suspended') {
+              window.siteVisualizerAudioContext.resume();
             }
           };
           document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
