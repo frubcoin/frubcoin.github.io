@@ -8,7 +8,7 @@ class CryptoPricesFull {
     // Configuration with defaults
     this.config = {
       trackedSymbols: config.trackedSymbols || ["ETH", "BTC", "SOL"],
-      updateInterval: config.updateInterval || 30000,
+      updateInterval: config.updateInterval || 60000,
       historyUpdateInterval: config.historyUpdateInterval || 60000, // 60 seconds
       ...config
     };

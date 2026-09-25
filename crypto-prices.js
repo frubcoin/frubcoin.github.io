@@ -8,7 +8,7 @@ class CryptoPrices {
     // Configuration with defaults
     this.config = {
       trackedSymbols: config.trackedSymbols || ["ETH", "BTC", "SOL"],
-      updateInterval: config.updateInterval || 30000,
+      updateInterval: config.updateInterval || 60000,
       containerSelector: config.containerSelector || '#prices-expand-section',
       pricesListSelector: config.pricesListSelector || '#prices-list',
       lastUpdateSelector: config.lastUpdateSelector || '#last-update',
@@ -37,17 +37,14 @@ class CryptoPrices {
     try {
       const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (browserTimezone) {
-        console.log('Using browser timezone:', browserTimezone);
         return browserTimezone;
       }
       throw new Error('Browser timezone not available');
     } catch (error) {
-      console.log('Browser timezone detection failed, falling back to IP-based lookup:', error);
       try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
         const ipTimezone = data.timezone || 'UTC';
-        console.log('Using IP-based timezone:', ipTimezone);
         return ipTimezone;
       } catch (ipError) {
         console.error('IP-based timezone detection failed:', ipError);
@@ -80,7 +77,6 @@ class CryptoPrices {
         ampm: parts.find(part => part.type === 'dayPeriod')?.value || (now.getHours() >= 12 ? 'PM' : 'AM')
       };
 
-      console.log(`Current time in ${this.userTimezone}: ${timeParts.hours}:${timeParts.minutes}:${timeParts.seconds} ${timeParts.ampm}`);
       return timeParts;
     } catch (error) {
       console.error('Error converting to timezone, using local time:', error);

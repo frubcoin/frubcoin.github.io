@@ -1,7 +1,7 @@
 (function (global) {
   'use strict';
 
-  const API_BASE = 'https://api.coingecko.com/api/v3';
+  const API_BASE = 'https://api.kraken.com/0/public';
   const COIN_IDS = {
     BTC: 'bitcoin',
     ETH: 'ethereum',
@@ -9,6 +9,23 @@
     TON: 'the-open-network',
     SUI: 'sui'
   };
+  const KRAKEN_PAIRS = {
+    BTC: { request: 'BTCUSD', response: 'XXBTZUSD' },
+    ETH: { request: 'ETHUSD', response: 'XETHZUSD' },
+    SOL: { request: 'SOLUSD', response: 'SOLUSD' },
+    TON: { request: 'TONUSD', response: 'TONUSD' },
+    SUI: { request: 'SUIUSD', response: 'SUIUSD' }
+  };
+  const COIN_ICONS = {
+    BTC: 'https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png',
+    ETH: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
+    SOL: 'https://coin-images.coingecko.com/coins/images/4128/large/solana.png',
+    TON: 'https://coin-images.coingecko.com/coins/images/17980/large/ton_symbol.png',
+    SUI: 'https://coin-images.coingecko.com/coins/images/26375/large/sui_asset.jpeg'
+  };
+  const priceCache = new Map();
+  const historyCache = new Map();
+  const pendingPriceRequests = new Map();
 
   function coinIdFor(symbol) {
     return COIN_IDS[String(symbol).toUpperCase()] || null;
@@ -17,65 +34,96 @@
   async function fetchJson(url) {
     const response = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!response.ok) throw new Error(`Crypto price request failed (${response.status})`);
-    return response.json();
+    const data = await response.json();
+    if (Array.isArray(data.error) && data.error.length) {
+      throw new Error(`Crypto price request failed: ${data.error.join(', ')}`);
+    }
+    return data;
   }
 
   async function fetchPrices(symbols) {
-    const requestedSymbols = symbols.map(symbol => String(symbol).toUpperCase());
-    const ids = requestedSymbols.map(coinIdFor).filter(Boolean);
-    if (!ids.length) return { RAW: {} };
+    const requestedSymbols = [...new Set(
+      symbols.map(symbol => String(symbol).toUpperCase()).filter(symbol => KRAKEN_PAIRS[symbol])
+    )];
+    if (!requestedSymbols.length) return { RAW: {} };
 
-    const params = new URLSearchParams({
-      vs_currency: 'usd',
-      ids: ids.join(','),
-      order: 'market_cap_desc',
-      sparkline: 'false',
-      price_change_percentage: '24h'
-    });
-    const markets = await fetchJson(`${API_BASE}/coins/markets?${params}`);
-    const byId = new Map(markets.map(market => [market.id, market]));
-    const raw = {};
+    const cacheKey = [...requestedSymbols].sort().join(',');
+    const cached = priceCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.data;
+    if (pendingPriceRequests.has(cacheKey)) return pendingPriceRequests.get(cacheKey);
 
-    requestedSymbols.forEach(symbol => {
-      const market = byId.get(coinIdFor(symbol));
-      if (!market || !Number.isFinite(market.current_price)) return;
-      raw[symbol] = {
-        USD: {
-          PRICE: market.current_price,
-          CHANGEPCT24HOUR: Number.isFinite(market.price_change_percentage_24h)
-            ? market.price_change_percentage_24h
-            : 0,
-          IMAGEURL: market.image || ''
-        }
-      };
-    });
+    const request = (async () => {
+      const params = new URLSearchParams({
+        pair: requestedSymbols.map(symbol => KRAKEN_PAIRS[symbol].request).join(',')
+      });
+      const data = await fetchJson(`${API_BASE}/Ticker?${params}`);
+      const raw = {};
 
-    return { RAW: raw };
+      requestedSymbols.forEach(symbol => {
+        const ticker = data.result?.[KRAKEN_PAIRS[symbol].response];
+        if (!ticker) return;
+
+        const price = Number(ticker.c?.[0]);
+        const openPrice = Number(ticker.o);
+        if (!Number.isFinite(price)) return;
+
+        raw[symbol] = {
+          USD: {
+            PRICE: price,
+            CHANGEPCT24HOUR: Number.isFinite(openPrice) && openPrice !== 0
+              ? ((price - openPrice) / openPrice) * 100
+              : 0,
+            IMAGEURL: COIN_ICONS[symbol]
+          }
+        };
+      });
+
+      const result = { RAW: raw };
+      priceCache.set(cacheKey, { data: result, expiresAt: Date.now() + 20000 });
+      return result;
+    })();
+
+    pendingPriceRequests.set(cacheKey, request);
+    try {
+      return await request;
+    } finally {
+      pendingPriceRequests.delete(cacheKey);
+    }
   }
 
   async function fetchHistory(symbol, timeRange) {
-    const coinId = coinIdFor(symbol);
-    if (!coinId) throw new Error(`Unsupported cryptocurrency symbol: ${symbol}`);
+    const normalizedSymbol = String(symbol).toUpperCase();
+    const pair = KRAKEN_PAIRS[normalizedSymbol];
+    if (!pair) throw new Error(`Unsupported cryptocurrency symbol: ${symbol}`);
 
-    const rangeMilliseconds = {
-      '10m': 10 * 60 * 1000,
-      '1h': 60 * 60 * 1000,
-      '6h': 6 * 60 * 60 * 1000,
-      '24h': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000,
-      '1y': 365 * 24 * 60 * 60 * 1000
+    const ranges = {
+      '10m': { seconds: 10 * 60, interval: 1 },
+      '1h': { seconds: 60 * 60, interval: 1 },
+      '6h': { seconds: 6 * 60 * 60, interval: 5 },
+      '24h': { seconds: 24 * 60 * 60, interval: 60 },
+      '7d': { seconds: 7 * 24 * 60 * 60, interval: 240 },
+      '1y': { seconds: 365 * 24 * 60 * 60, interval: 1440 }
     };
-    const days = timeRange === '7d' ? 7 : timeRange === '1y' ? 365 : 1;
-    const params = new URLSearchParams({ vs_currency: 'usd', days: String(days) });
-    const data = await fetchJson(`${API_BASE}/coins/${coinId}/market_chart?${params}`);
-    const cutoff = Date.now() - (rangeMilliseconds[timeRange] || rangeMilliseconds['24h']);
+    const range = ranges[timeRange] || ranges['24h'];
+    const cacheKey = `${normalizedSymbol}:${timeRange}`;
+    const cached = historyCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-    return (data.prices || [])
-      .filter(([timestamp]) => timestamp >= cutoff)
-      .map(([timestamp, price]) => ({
-        time: Math.floor(timestamp / 1000),
-        close: price
-      }));
+    const cutoff = Math.floor(Date.now() / 1000) - range.seconds;
+    const params = new URLSearchParams({
+      pair: pair.request,
+      interval: String(range.interval),
+      since: String(cutoff)
+    });
+    const data = await fetchJson(`${API_BASE}/OHLC?${params}`);
+    const resultKey = Object.keys(data.result || {}).find(key => key !== 'last');
+    const history = (resultKey ? data.result[resultKey] : [])
+      .filter(row => row[0] >= cutoff)
+      .map(row => ({ time: row[0], close: Number(row[4]) }))
+      .filter(item => Number.isFinite(item.close));
+
+    historyCache.set(cacheKey, { data: history, expiresAt: Date.now() + 30000 });
+    return history;
   }
 
   global.CryptoPriceApi = { fetchPrices, fetchHistory, coinIdFor };

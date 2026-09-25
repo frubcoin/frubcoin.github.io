@@ -303,7 +303,6 @@
                     visualizerContainer.setAttribute('aria-hidden', 'true');
                   }
 
-                  console.log('Butterchurn background disabled:', reason);
                 }
 
                 function canUseButterchurnBackground() {
@@ -413,7 +412,6 @@
                         ? presetKeys.indexOf(currentPresetName)
                         : -1;
                       shufflePresetKeys();
-                      console.log(`${packName} loaded. ${presetKeys.length} presets available.`);
                     }
 
                     function loadPresetPack(src, globalName, packName) {
@@ -444,7 +442,6 @@
                     function loadNextPreset(transitionSeconds = 2.7) {
                       currentPresetIndex = (currentPresetIndex + 1) % presetKeys.length;
                       const preset = presets[presetKeys[currentPresetIndex]];
-                      console.log('Current preset:', presetKeys[currentPresetIndex]); // Log the current preset name
                       visualizer.loadPreset(preset, transitionSeconds);
                     }
           
