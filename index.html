@@ -8,8 +8,41 @@
     <style>
         body,html{background:#000!important;visibility:hidden}
     </style>
-    <link href=arrowhead-rounded-outline.svg?v=1 rel=preload as=image type=image/png>
-    <link href=hand-pointer.svg?v=1 rel=preload as=image type=image/png>
+    <link href=arrowhead-rounded-outline.svg rel=preload as=image type=image/svg+xml>
+    <link href=hand-pointer.svg rel=preload as=image type=image/svg+xml>
+    <script>
+      // Retire the service worker from the removed calendar PWA. Its asset cache
+      // cannot store the partial responses used when streaming the site audio.
+      if ('serviceWorker' in navigator) {
+        const hadServiceWorkerController = Boolean(navigator.serviceWorker.controller);
+        const deleteLegacyCaches = () => 'caches' in window
+          ? caches.keys().then(keys => Promise.all(
+              keys
+                .filter(key => key.startsWith('shell-tcg-release-calendar-') || key.startsWith('assets-tcg-release-calendar-'))
+                .map(key => caches.delete(key))
+            ))
+          : Promise.resolve();
+
+        Promise.all([
+          navigator.serviceWorker.getRegistrations().then(registrations =>
+            Promise.all(registrations.map(registration => registration.unregister()))
+          ),
+          deleteLegacyCaches()
+        ]).catch(error => {
+          console.warn('Could not fully remove the old service worker:', error);
+        }).finally(() => {
+          const reloadKey = 'stale-service-worker-cleanup';
+          if (hadServiceWorkerController && !sessionStorage.getItem(reloadKey)) {
+            sessionStorage.setItem(reloadKey, '1');
+            window.location.reload();
+          } else if (!hadServiceWorkerController) {
+            sessionStorage.removeItem(reloadKey);
+            // Catch a final cache write that an outgoing worker may finish late.
+            setTimeout(deleteLegacyCaches, 1000);
+          }
+        });
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap" rel=stylesheet>
     <meta content=Frub.bio name=description>
     <meta content="frub, frubcoin" name=keywords>
@@ -333,24 +366,79 @@
                     canvas.height = window.innerHeight;
                     const visualizerContainer = document.getElementById('visualizer-container');
                     visualizerContainer.appendChild(canvas);
-          
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                    // Creating the player first initializes Howler's shared Web Audio context.
+                    const sound = new Howl({
+                      src: ['Let U Go.mp3?v=1'],
+                      loop: true,
+                      volume: 0.1
+                    });
+
+                    const audioContext = Howler.ctx;
                     const visualizer = butterchurn.default.createVisualizer(audioContext, canvas, {
                       width: window.innerWidth,
                       height: window.innerHeight
                     });
           
-                    // Get all presets
-                    const presets = butterchurnPresets.getPresets();
+                    // Start with the base pack so the first visual can render immediately.
+                    const presets = { ...butterchurnPresets.getPresets() };
                     const presetKeys = Object.keys(presets);
+                    let currentPresetIndex = -1;
 
-                    // Shuffle the preset order on every page load.
-                    for (let i = presetKeys.length - 1; i > 0; i--) {
-                      const randomIndex = Math.floor(Math.random() * (i + 1));
-                      [presetKeys[i], presetKeys[randomIndex]] = [presetKeys[randomIndex], presetKeys[i]];
+                    function shufflePresetKeys() {
+                      const currentPresetName = currentPresetIndex >= 0
+                        ? presetKeys[currentPresetIndex]
+                        : null;
+
+                      for (let i = presetKeys.length - 1; i > 0; i--) {
+                        const randomIndex = Math.floor(Math.random() * (i + 1));
+                        [presetKeys[i], presetKeys[randomIndex]] = [presetKeys[randomIndex], presetKeys[i]];
+                      }
+
+                      currentPresetIndex = currentPresetName
+                        ? presetKeys.indexOf(currentPresetName)
+                        : -1;
+                      visualizerContainer.dataset.presetCount = String(presetKeys.length);
                     }
 
-                    let currentPresetIndex = -1;
+                    function mergePresetPack(pack, packName) {
+                      if (!pack || typeof pack.getPresets !== 'function') return;
+
+                      const currentPresetName = currentPresetIndex >= 0
+                        ? presetKeys[currentPresetIndex]
+                        : null;
+                      Object.assign(presets, pack.getPresets());
+                      presetKeys.splice(0, presetKeys.length, ...Object.keys(presets));
+                      currentPresetIndex = currentPresetName
+                        ? presetKeys.indexOf(currentPresetName)
+                        : -1;
+                      shufflePresetKeys();
+                      console.log(`${packName} loaded. ${presetKeys.length} presets available.`);
+                    }
+
+                    function loadPresetPack(src, globalName, packName) {
+                      const script = document.createElement('script');
+                      script.src = src;
+                      script.async = true;
+                      script.crossOrigin = 'anonymous';
+                      script.onload = () => mergePresetPack(window[globalName], packName);
+                      script.onerror = () => console.warn(`${packName} could not be loaded.`);
+                      document.head.appendChild(script);
+                    }
+
+                    shufflePresetKeys();
+
+                    // Load the larger official packs without delaying the initial preset.
+                    loadPresetPack(
+                      'https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresetsExtra.min.js',
+                      'butterchurnPresetsExtra',
+                      'Butterchurn Extra'
+                    );
+                    loadPresetPack(
+                      'https://unpkg.com/butterchurn-presets@2.4.7/lib/butterchurnPresetsExtra2.min.js',
+                      'butterchurnPresetsExtra2',
+                      'Butterchurn Extra 2'
+                    );
           
                     // Function to load the next preset
                     function loadNextPreset(transitionSeconds = 2.7) {
@@ -363,30 +451,15 @@
                     // Show the initial preset immediately; later changes still blend smoothly.
                     loadNextPreset(0);
           
-                    // Create Howler audio instance
-                    const sound = new Howl({
-                      src: ['Let U Go.mp3?v=1'],
-                      loop: true,
-                      volume: 0.1,
-                      html5: true // Enable HTML5 mode for Web Audio API compatibility
-                    });
-
                     // Share this player with the top-right audio controls.
                     window.siteAudio = sound;
                     window.siteVisualizerAudioContext = audioContext;
           
-                    // Connect Howler to visualizer
+                    // Analyse the same Web Audio graph used by the top-right player.
                     const analyser = audioContext.createAnalyser();
                     analyser.fftSize = 512;
-                    
-                    // Get the audio node from Howler when it's ready
-                    sound.once('load', function() {
-                      const audioNode = sound._sounds[0]._node;
-                      const audioSource = audioContext.createMediaElementSource(audioNode);
-                      audioSource.connect(analyser);
-                      analyser.connect(audioContext.destination);
-                      visualizer.connectAudio(analyser);
-                    });
+                    Howler.masterGain.connect(analyser);
+                    visualizer.connectAudio(analyser);
           
                     // Start the visualizer rendering
                     visualizer.setRendererSize(window.innerWidth, window.innerHeight);
@@ -1086,8 +1159,7 @@
           const sound2 = window.siteAudio || new Howl({
             src: ['Let U Go.mp3?v=1'],
             loop: true,
-            volume: 0.1,
-            html5: true
+            volume: 0.1
           });
           
           muteBtn.innerHTML = volumeOff;
