@@ -329,7 +329,14 @@
                     // Get all presets
                     const presets = butterchurnPresets.getPresets();
                     const presetKeys = Object.keys(presets);
-                    let currentPresetIndex = 0;
+
+                    // Shuffle the preset order on every page load.
+                    for (let i = presetKeys.length - 1; i > 0; i--) {
+                      const randomIndex = Math.floor(Math.random() * (i + 1));
+                      [presetKeys[i], presetKeys[randomIndex]] = [presetKeys[randomIndex], presetKeys[i]];
+                    }
+
+                    let currentPresetIndex = -1;
           
                     // Function to load the next preset
                     function loadNextPreset() {
