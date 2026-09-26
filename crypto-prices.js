@@ -164,14 +164,15 @@ class CryptoPrices {
             refreshInterval: 50,
             decimals: 2,
             formatter: function(value, options) {
-              return `${changeSymbol} ${value.toFixed(options.decimals)}%`;
+              return `24H ${changeSymbol} ${value.toFixed(options.decimals)}%`;
             }
           });
         } else {
-          ticker.textContent = `${changeSymbol} ${Math.abs(change24h)}%`;
+          ticker.textContent = `24H ${changeSymbol} ${Math.abs(change24h)}%`;
         }
 
         ticker.className = `price-ticker ${changeClass}`;
+        ticker.setAttribute('aria-label', `${symbol} 24-hour change: ${change24h}%`);
         ticker.dataset.prevChange = Math.abs(change24h);
         this.prevPrices[symbol] = data.PRICE;
       }

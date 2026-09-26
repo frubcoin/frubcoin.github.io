@@ -843,10 +843,11 @@
             refreshInterval: 50,
             decimals: 2,
             formatter: function(value, options) {
-              return `${changeSymbol} ${value.toFixed(options.decimals)}%`;
+              return `24H ${changeSymbol} ${value.toFixed(options.decimals)}%`;
             }
           });
           ticker.className = `price-ticker ${changeClass}`;
+          ticker.setAttribute('aria-label', `${coin} 24-hour change: ${change24h}%`);
           ticker.dataset.prevChange = Math.abs(change24h); // Store current change for next animation
   
           prevPrices[coin] = data.PRICE;
